@@ -1,3 +1,4 @@
+'use client'
 import * as React from "react";
 import { styled } from "@mui/material/styles";
 import MuiAppBar from "@mui/material/AppBar";
@@ -7,6 +8,10 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Sidebar from "./Sidebar";
 import ExitToApp from "@mui/icons-material/ExitToApp";
+import { useDispatch } from "react-redux";
+import { logOut } from "@/redux/actions/authActions";
+import { useRouter } from "next/navigation";
+import { Alert } from "@mui/material";
 
 const drawerWidth = 240;
 
@@ -30,8 +35,20 @@ const AppBar = styled(MuiAppBar, {
 
 export default function Navbar() {
   const [open, setOpen] = React.useState(true);
+  const dispatch = useDispatch()
+  const router = useRouter()
   const toggleDrawer = () => {
     setOpen(!open);
+  };
+
+  const redirect = () => router.push("/");
+
+  const handleLogOut = () => {
+    const isConfirmed = window.confirm("Êtes-vous sûr de vouloir vous déconnecter?");
+
+    if (isConfirmed) {
+      dispatch(logOut(redirect))
+    }
   };
 
   return (
@@ -70,7 +87,7 @@ export default function Navbar() {
           </Typography>
           <IconButton
             component='a'
-            href="/"
+            onClick={handleLogOut}
           >
             <ExitToApp />
           </IconButton>

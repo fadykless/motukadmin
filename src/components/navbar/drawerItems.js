@@ -1,7 +1,10 @@
 import React from "react";
 import ArticleIcon from "@mui/icons-material/Article";
 import PublishIcon from "@mui/icons-material/Publish";
-import VideoCallIcon from '@mui/icons-material/VideoCall';
+import CallReceivedIcon from '@mui/icons-material/CallReceived';
+import BuildIcon from '@mui/icons-material/Build';
+import DirectionsCarFilledIcon from '@mui/icons-material/DirectionsCarFilled';
+import StoreIcon from '@mui/icons-material/Store';
 
 const iconProps = {
   color: "primary",
@@ -9,13 +12,28 @@ const iconProps = {
 
 export const drawerItems = [
   {
-    text: "Annonces",
-    icon: <ArticleIcon {...iconProps} />,
-    path: "/annonces",
+    text: "Marketplace",
+    icon: <StoreIcon {...iconProps} />,
+    path: "/marketplace",
+  },
+  {
+    text: "Location",
+    icon: <DirectionsCarFilledIcon {...iconProps} />,
+    path: "/location",
+  },
+  {
+    text: "Pièces détachées",
+    icon: <BuildIcon {...iconProps} />,
+    path: "/pieces",
   },
 ];
 
 export const secondaryListItems = [
+  {
+    text: "Offres reçues",
+    icon: <CallReceivedIcon {...iconProps} />,
+    path: "/offres-recues",
+  },
   {
     text: "Publier",
     icon: <PublishIcon {...iconProps} />,

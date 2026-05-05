@@ -23,7 +23,7 @@ const clientSideEmotionCache = createEmotionCache()
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Provider store={store}>
           <CacheProvider value={clientSideEmotionCache}>

@@ -1,5 +1,5 @@
 'use client'
-import { Box, Grid, Pagination, Typography, useTheme } from "@mui/material";
+import { Box, Grid, Pagination, } from "@mui/material";
 import React from "react";
 import SearchBar from "@/components/includes/SearchBar";
 import { useState } from "react";
@@ -19,7 +19,7 @@ const Products = () => {
     const [cars, setCars] = useState([]);
     const [data, setData] = useState([]);
     const [search, setSearch] = useState("");
-    const itemsPerPage = 12;
+    const itemsPerPage = 20;
     const [itemOffset, setItemOffset] = useState(0);
 
     const endOffset = itemOffset + itemsPerPage;
@@ -27,6 +27,7 @@ const Products = () => {
     const pageCount = Math.ceil(data.length / itemsPerPage);
 
     useEffect(() => {
+        if (!db) return; // Attendre que Firestore soit initialisé
         const colRef = collection(db, "products");
         const q = query(
             colRef,

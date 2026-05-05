@@ -26,7 +26,8 @@
     "react-toastify": "^11.0.5",
     "redux": "^5.0.1",
     "redux-thunk": "^3.1.0",
-    "thunk": "^0.0.1"
+    "thunk": "^0.0.1",
+    "yet-another-react-lightbox": "^3.32.0"
   },
   "devDependencies": {
     "eslint": "^9",

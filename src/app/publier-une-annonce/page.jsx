@@ -6,11 +6,9 @@ import CameraAlt from "@mui/icons-material/CameraAlt";
 import { LoadingButton } from "@mui/lab";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db } from "@/firebase";
-import { authors } from "@/data";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic"; //
-import { createSlug } from "@/functions";
-import { doc, setDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 
 
 const CKEditor = dynamic(() => import("@ckeditor/ckeditor5-react").then(mod => mod.CKEditor), {
@@ -39,7 +37,7 @@ const AddArticle = () => {
             const reader = new FileReader();
             reader.onload = () => {
                 imagePreviews.push(reader.result);
-                setArticle((prev) => ({ ...prev, images: imageArray }));
+                setProduct((prev) => ({ ...prev, images: imageArray }));
                 setPreviews([...imagePreviews]);
             };
             reader.readAsDataURL(file);
@@ -116,9 +114,9 @@ const AddArticle = () => {
             <Paper elevation={0} sx={{ p: 3 }}>
                 <form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        <Grid size={{ xs: 12 }}>
                             <TextField
-                                name="title"
+                                name="name"
                                 label="Titre"
                                 required
                                 type="text"
@@ -133,6 +131,17 @@ const AddArticle = () => {
                                 label="Prix en USD"
                                 required
                                 type="text"
+                                fullWidth
+                                onChange={handleChange}
+                            />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField
+                                name="phoneNumber"
+                                label="Téléphone"
+                                required
+                                type="phone"
                                 fullWidth
                                 onChange={handleChange}
                             />

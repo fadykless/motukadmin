@@ -1,14 +1,32 @@
+'use client'
 import {
   Box,
+  Button,
   Grid,
+  IconButton,
   Typography,
   alpha,
   useTheme,
 } from "@mui/material";
 import React, { Fragment } from "react";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useDispatch } from "react-redux";
+import { deleteProduct } from "@/redux/actions/productActions";
+import moment from "moment";
+import 'moment/locale/fr'
 
 const Cars = ({ data }) => {
   const theme = useTheme();
+  const dispatch = useDispatch()
+
+  const handleDelete = (productID) => {
+    const isConfirmed = window.confirm("Êtes-vous sùr de vouloir supprimer cette annonce?");
+
+    if (isConfirmed) {
+      dispatch(deleteProduct(productID))
+    }
+  };
 
   return (
     <Fragment>
@@ -26,11 +44,13 @@ const Cars = ({ data }) => {
             href={"/marketplace/" + data.id}
             sx={{
               display: 'block',
-              height: 200,
               px: { md: 10, xs: 6 },
-              pt: { xs: 6, md: false },
+              pt: { xs: 6 },
               overflow: "hidden",
               backgroundSize: "cover",
+              aspectRatio: '4/5',
+              width: '100%',
+              borderRadius: 4,
               backgroundPosition: "center",
               backgroundImage: `linear-gradient(
         to bottom,
@@ -43,6 +63,7 @@ const Cars = ({ data }) => {
             <Typography color={"text.primary"} fontWeight={'600'} variant="h5">
               {data.name}
             </Typography>
+            <Typography color="text.secondary">{moment(data.createdAt).fromNow()}</Typography>
             <Typography color={"secondary"} variant="h6">
               {data.etat}{" "}
             </Typography>
@@ -80,6 +101,18 @@ const Cars = ({ data }) => {
                 {data.price} USD
               </Typography>
             </Box>
+          </Box>
+          <Box>
+            <IconButton
+              component={"a"}
+              //onClick={() => handleDelete(data.id)}
+              variant="default"
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton onClick={() => handleDelete(data.id)}>
+              <DeleteIcon />
+            </IconButton>
           </Box>
         </Box>
       </Grid>

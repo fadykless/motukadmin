@@ -61,7 +61,7 @@ const Sidebar = ({ open, setOpen, toggleDrawer }) => {
       <Divider />
       <List component="nav">
         {drawerItems.map((item) => (
-          <ListItemButton component='a' href={item.path}>
+          <ListItemButton component='a' href={item.path} key={item}>
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItemButton>

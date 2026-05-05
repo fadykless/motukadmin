@@ -10,11 +10,11 @@ const Login = () => {
 
     useEffect(() => {
         // ✅ Accès à localStorage seulement côté client
-        const storedAdmin = localStorage.getItem("market1fluenceAdminID")
+        const storedAdmin = localStorage.getItem("motukaAdminID")
         setAdmin(storedAdmin)
 
         if (storedAdmin) {
-            router.push('/articles')
+            router.push('/annonces')
         }
     }, [router])
 

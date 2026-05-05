@@ -1,6 +1,6 @@
 'use client'
 import { LoadingButton } from "@mui/lab";
-import { Grid, TextField, Typography } from "@mui/material";
+import { Grid, TextField, Button } from "@mui/material";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/redux/actions/authActions";
@@ -25,7 +25,7 @@ function LoginForm() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    const docRef = doc(db, "admin", "oHkYMjm6kddoEPAe5ZeyXM9dL8H3");
+    const docRef = doc(db, "admin", "g321cQDdhXZKOAHd3wX4XdmV8bA2");
 
     const unsubscribe = onSnapshot(
       docRef,
@@ -50,7 +50,7 @@ function LoginForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (data.email == credentials.email) {
-      dispatch(login(credentials, () => router.push("/articles")));
+      dispatch(login(credentials, () => router.push("/annonces")));
     } else {
       toast.error("Identifiant ou mot de passe incorrect");
     }

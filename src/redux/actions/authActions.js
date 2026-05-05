@@ -1,5 +1,5 @@
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "../../firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase";
 
 export const login = (credentials, redirect) => {
   return (dispatch) => {
