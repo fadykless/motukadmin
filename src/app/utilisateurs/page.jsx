@@ -19,13 +19,11 @@ import {
     Divider
 } from "@mui/material";
 
-
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PersonIcon from "@mui/icons-material/Person";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
-
 
 import {
     collection,
@@ -37,32 +35,16 @@ import {
     doc
 } from "firebase/firestore";
 
-
 import { db } from "@/firebase";
 import { toast } from "react-toastify";
 
-
-
-
-
 const Users = () => {
-
-
     const [users, setUsers] = useState([]);
-
     const [data, setData] = useState([]);
-
     const [search, setSearch] = useState("");
-
     const [role, setRole] = useState("");
-
     const [anchorEl, setAnchorEl] = useState(null);
-
     const [selectedUser, setSelectedUser] = useState(null);
-
-
-
-
 
     useEffect(() => {
 
@@ -109,10 +91,6 @@ const Users = () => {
     }, []);
 
 
-
-
-
-
     const filterUsers = (value) => {
 
 
@@ -147,10 +125,6 @@ const Users = () => {
     };
 
 
-
-
-
-
     const filterRole = (value) => {
 
 
@@ -175,11 +149,6 @@ const Users = () => {
         );
     };
 
-
-
-
-
-
     const openMenu = (event, user) => {
 
         setAnchorEl(
@@ -190,17 +159,11 @@ const Users = () => {
 
     };
 
-
-
     const closeMenu = () => {
 
         setAnchorEl(null);
 
     };
-
-
-
-
 
     const updateStatus = async (status) => {
 
@@ -248,11 +211,6 @@ const Users = () => {
 
     };
 
-
-
-
-
-
     const deleteUser = async () => {
         if (
             !window.confirm(
@@ -290,42 +248,26 @@ const Users = () => {
 
     };
 
-
-
-
-
-
-
     return (
-
         <Box
             sx={{
                 p: 3
             }}
         >
 
-
-
             <Typography
                 variant="h4"
                 fontWeight={700}
                 mb={3}
             >
-
                 Utilisateurs
-
             </Typography>
-
-
-
 
             <Grid
                 container
                 spacing={2}
                 mb={3}
             >
-
-
                 <Grid
                     size={{
                         xs: 12,
@@ -424,11 +366,6 @@ const Users = () => {
 
 
             </Grid>
-
-
-
-
-
 
             <Grid
                 container
@@ -639,57 +576,33 @@ const Users = () => {
 
             </Grid>
 
-
-
-
-
-
-
             <Menu
-
                 anchorEl={anchorEl}
-
                 open={
                     Boolean(anchorEl)
                 }
-
                 onClose={closeMenu}
-
             >
-
 
                 {
                     selectedUser?.status !== "blocked"
-
                     &&
-
                     <MenuItem
-
                         onClick={() =>
                             updateStatus(
                                 "blocked"
                             )
                         }
-
                     >
-
 
                         <BlockIcon
                             sx={{
                                 mr: 1
                             }}
                         />
-
                         Bloquer
-
-
                     </MenuItem>
-
-
                 }
-
-
-
 
 
                 {
@@ -751,19 +664,8 @@ const Users = () => {
 
 
             </Menu>
-
-
-
-
-
         </Box>
-
-
     )
-
-
 }
-
-
 
 export default Users;
