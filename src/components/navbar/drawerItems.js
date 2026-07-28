@@ -1,43 +1,100 @@
-import React from "react";
-import ArticleIcon from "@mui/icons-material/Article";
-import PublishIcon from "@mui/icons-material/Publish";
-import CallReceivedIcon from '@mui/icons-material/CallReceived';
-import BuildIcon from '@mui/icons-material/Build';
-import DirectionsCarFilledIcon from '@mui/icons-material/DirectionsCarFilled';
-import StoreIcon from '@mui/icons-material/Store';
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
+import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
+import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
+import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
+import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
+import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
+import ReportRoundedIcon from "@mui/icons-material/ReportRounded";
+import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 
-const iconProps = {
-  color: "primary",
-};
-
-export const drawerItems = [
+export const menus = [
   {
-    text: "Marketplace",
-    icon: <StoreIcon {...iconProps} />,
-    path: "/marketplace",
-  },
-  {
-    text: "Location",
-    icon: <DirectionsCarFilledIcon {...iconProps} />,
-    path: "/location",
-  },
-  {
-    text: "Pièces détachées",
-    icon: <BuildIcon {...iconProps} />,
-    path: "/pieces",
-  },
-];
-
-export const secondaryListItems = [
-  {
-    text: "Offres reçues",
-    icon: <CallReceivedIcon {...iconProps} />,
-    path: "/offres-recues",
-  },
-  {
-    text: "Publier",
-    icon: <PublishIcon {...iconProps} />,
-    path: "/publier-une-annonce",
+    title: "",
+    items: [
+      {
+        label: "Dashboard",
+        icon: <DashboardRoundedIcon />,
+        href: "/dashboard",
+      },
+      {
+        label: "Marketplace",
+        icon: <DirectionsCarRoundedIcon />,
+        href: "/marketplace",
+      },
+    ],
   },
 
+
+  {
+    title: "UTILISATEURS",
+    items: [
+      {
+        label: "Utilisateurs",
+        icon: <PeopleRoundedIcon />,
+        href: "/utilisateurs",
+      },
+      {
+        label: "Favoris",
+        icon: <FavoriteRoundedIcon />,
+        href: "/favorites",
+      },
+    ],
+  },
+
+  {
+    title: "BUSINESS",
+    items: [
+      {
+        label: "Paiements",
+        icon: <PaymentsRoundedIcon />,
+        href: "/payments",
+      },
+      {
+        label: "Publicités Premium",
+        icon: <CampaignRoundedIcon />,
+        href: "/premium",
+      },
+    ],
+  },
+
+  {
+    title: "INTELLIGENCE",
+    items: [
+      {
+        label: "Motuka AI",
+        icon: <SmartToyRoundedIcon />,
+        href: "/ai",
+      },
+      {
+        label: "Signalements",
+        icon: <ReportRoundedIcon />,
+        href: "/reports",
+      },
+      {
+        label: "Support",
+        icon: <SupportAgentRoundedIcon />,
+        href: "/support",
+      },
+    ],
+  },
+
+  {
+    title: "ADMINISTRATION",
+    items: [
+      {
+        label: "Statistiques",
+        icon: <BarChartRoundedIcon />,
+        href: "/analytics",
+      },
+      {
+        label: "Paramètres",
+        icon: <SettingsRoundedIcon />,
+        href: "/settings",
+      },
+    ],
+  },
 ];

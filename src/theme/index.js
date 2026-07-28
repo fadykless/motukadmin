@@ -1,13 +1,12 @@
 import { createTheme } from "@mui/material";
-import { colors } from "./colors";
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: colors.primary,
+      main: "#fed336",
     },
     secondary: {
-      main: colors.secondary,
+      main: "#ff0000",
     },
   },
   typography: {
@@ -15,14 +14,8 @@ const theme = createTheme({
     button: {
       textTransform: "normal",
     },
-    h4: {
-      fontFamily: "Montserrat",
-      fontSize: 30,
-      fontWeight: "600",
-    },
-    h6: {
-      fontFamily: "Montserrat",
-      fontWeight: "600",
+    h3: {
+      fontWeight: "700",
     },
   },
 });

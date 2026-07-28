@@ -1,84 +1,134 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 import {
-  Toolbar,
-  styled,
-  List,
-  IconButton,
+  Box,
   Divider,
+  Drawer,
+  List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  ListSubheader,
+  Toolbar,
+  Typography,
 } from "@mui/material";
-import React from "react";
-import MuiDrawer from "@mui/material/Drawer";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import { drawerItems, secondaryListItems } from "./drawerItems";
+import { menus } from "./drawerItems";
 
-const drawerWidth = 240;
+const drawerWidth = 270;
 
-const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
-  "& .MuiDrawer-paper": {
-    position: "relative",
-    whiteSpace: "nowrap",
-    width: drawerWidth,
-    transition: theme.transitions.create("width", {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-    boxSizing: "border-box",
-    ...(!open && {
-      overflowX: "hidden",
-      transition: theme.transitions.create("width", {
-        easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.leavingScreen,
-      }),
-      width: theme.spacing(7),
-      [theme.breakpoints.up("sm")]: {
-        width: theme.spacing(9),
-      },
-    }),
-  },
-}));
-
-const Sidebar = ({ open, setOpen, toggleDrawer }) => {
+export default function Sidebar({
+  mobile = false,
+  closeDrawer,
+}) {
+  const pathname = usePathname();
 
   return (
-    <Drawer variant="permanent" open={open} elevation={0}>
-      <Toolbar
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: drawerWidth,
+        flexShrink: 0,
+        "& .MuiDrawer-paper": {
+          width: drawerWidth,
+          borderRight: "1px solid",
+          borderColor: "divider",
+          boxSizing: "border-box",
+        },
+      }}
+    >
+      <Toolbar>
+        <Box>
+          <Typography
+            variant="h5"
+            fontWeight={900}
+          >
+            MOTUKA
+          </Typography>
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+          >
+            Back Office
+          </Typography>
+        </Box>
+      </Toolbar>
+
+      <Divider />
+
+      <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          px: [1],
+          overflow: "auto",
+          py: 2,
         }}
       >
-        <IconButton onClick={toggleDrawer}>
-          <ChevronLeftIcon />
-        </IconButton>
-      </Toolbar>
-      <Divider />
-      <List component="nav">
-        {drawerItems.map((item) => (
-          <ListItemButton component='a' href={item.path} key={item}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItemButton>
+        {menus.map((section) => (
+          <Box
+            key={section.title}
+            sx={{ mb: 2 }}
+          >
+            {section.title && (
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 3,
+                  mb: 1,
+                  display: "block",
+                  color: "text.secondary",
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                }}
+              >
+                {section.title}
+              </Typography>
+            )}
+
+            <List disablePadding>
+              {section.items.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+
+                return (
+                  <ListItemButton
+                    key={item.href}
+                    component={Link}
+                    href={item.href}
+                    onClick={
+                      mobile
+                        ? closeDrawer
+                        : undefined
+                    }
+                    selected={active}
+                    sx={{
+                      mx: 1,
+                      mb: 0.5,
+                      borderRadius: 2,
+                      "&.Mui-selected": {
+                        bgcolor: "primary.main",
+                        color: "white",
+                        "& .MuiListItemIcon-root": {
+                          color: "white",
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      {item.icon}
+                    </ListItemIcon>
+
+                    <ListItemText
+                      primary={item.label}
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          </Box>
         ))}
-        <Divider sx={{ my: 1 }} />
-        <ListSubheader component="div" inset>
-          Actions
-        </ListSubheader>
-        {secondaryListItems.map((item) => (
-          <ListItemButton component='a' href={item.path}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItemButton>
-        ))}
-      </List>
+      </Box>
     </Drawer>
   );
-};
-
-export default Sidebar;
+}

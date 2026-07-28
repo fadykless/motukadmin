@@ -1,100 +1,183 @@
-'use client'
+"use client";
+
 import * as React from "react";
 import { styled } from "@mui/material/styles";
 import MuiAppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
+import {
+  Toolbar,
+  Typography,
+  IconButton,
+  Box,
+  Avatar,
+  Badge,
+  Tooltip,
+} from "@mui/material";
+
 import MenuIcon from "@mui/icons-material/Menu";
+import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+
 import Sidebar from "./Sidebar";
-import ExitToApp from "@mui/icons-material/ExitToApp";
+
 import { useDispatch } from "react-redux";
 import { logOut } from "@/redux/actions/authActions";
 import { useRouter } from "next/navigation";
-import { Alert } from "@mui/material";
 
-const drawerWidth = 240;
+const drawerWidth = 270;
 
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== "open",
 })(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
+  background: "#fff",
+  color: "#111",
+  boxShadow: "0 1px 8px rgba(0,0,0,.06)",
+  transition: theme.transitions.create(["width", "margin"]),
   ...(open && {
     marginLeft: drawerWidth,
     width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
   }),
 }));
 
 export default function Navbar() {
+
   const [open, setOpen] = React.useState(true);
-  const dispatch = useDispatch()
-  const router = useRouter()
-  const toggleDrawer = () => {
-    setOpen(!open);
-  };
+
+  const dispatch = useDispatch();
+
+  const router = useRouter();
+
+  const toggleDrawer = () => setOpen(!open);
 
   const redirect = () => router.push("/");
 
   const handleLogOut = () => {
-    const isConfirmed = window.confirm("Êtes-vous sûr de vouloir vous déconnecter?");
 
-    if (isConfirmed) {
-      dispatch(logOut(redirect))
+    if (
+      window.confirm(
+        "Êtes-vous sûr de vouloir vous déconnecter ?"
+      )
+    ) {
+
+      dispatch(logOut(redirect));
+
     }
+
   };
 
   return (
-    <React.Fragment>
+    <>
+
       <AppBar
+        position="fixed"
         elevation={0}
-        sx={{ backgroundColor: "#fff" }}
-        position="absolute"
         open={open}
       >
-        <Toolbar
-          sx={{
-            pr: "24px", // keep right padding when drawer closed
-          }}
-        >
-          <IconButton
-            edge="start"
-            color="primary"
-            aria-label="open drawer"
-            onClick={toggleDrawer}
+
+        <Toolbar>
+
+          {!open && (
+
+            <IconButton
+              onClick={toggleDrawer}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+
+          )}
+
+          <Box
             sx={{
-              marginRight: "36px",
-              ...(open && { display: "none" }),
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              flexGrow: 1,
             }}
           >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            component="h1"
-            variant="h6"
-            color="primary"
-            noWrap
-            sx={{ flexGrow: 1 }}
-          >
-            MOTUKA
-          </Typography>
-          <IconButton
-            component='a'
-            onClick={handleLogOut}
-          >
-            <ExitToApp />
-          </IconButton>
+
+            {/* <img
+              src="/logo_motuka.png"
+              alt="Motuka"
+              height={38}
+            /> */}
+
+            <Box>
+
+              <Typography
+                fontWeight={700}
+                fontSize={18}
+              >
+                MOTUKA Admin
+              </Typography>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+              >
+                Tableau de bord
+              </Typography>
+
+            </Box>
+
+          </Box>
+
+          <Tooltip title="Notifications">
+
+            <IconButton>
+
+              <Badge
+                badgeContent={3}
+                color="error"
+              >
+                <NotificationsOutlinedIcon />
+              </Badge>
+
+            </IconButton>
+
+          </Tooltip>
+
+          <Tooltip title="Administrateur">
+
+            <IconButton sx={{ ml: 1 }}>
+
+              <Avatar
+                src="/avatar.png"
+                sx={{
+                  width: 38,
+                  height: 38,
+                }}
+              />
+
+            </IconButton>
+
+          </Tooltip>
+
+          <Tooltip title="Déconnexion">
+
+            <IconButton
+              onClick={handleLogOut}
+              color="error"
+            >
+
+              <LogoutRoundedIcon />
+
+            </IconButton>
+
+          </Tooltip>
+
         </Toolbar>
+
       </AppBar>
 
-      <Sidebar open={open} setOpen={setOpen} toggleDrawer={toggleDrawer} />
-    </React.Fragment>
+      <Sidebar
+        open={open}
+        setOpen={setOpen}
+        toggleDrawer={toggleDrawer}
+      />
+
+    </>
+
   );
+
 }

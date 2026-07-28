@@ -1,103 +1,944 @@
-'use client'
-import { Box, Grid, Pagination, } from "@mui/material";
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
+
+import {
+    Box,
+    Button,
+    Grid,
+    Pagination,
+    Paper,
+    Typography,
+    Fab,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Chip,
+    CircularProgress
+} from "@mui/material";
+
+
 import SearchBar from "@/components/includes/SearchBar";
-import { useState } from "react";
-import { useEffect } from "react";
+import Cars from "@/components/product/Cars";
+
+
+import AddIcon from "@mui/icons-material/Add";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
+
+
 import {
     collection,
-    limit,
-    onSnapshot,
-    orderBy,
     query,
     where,
+    orderBy,
+    onSnapshot,
+    doc,
+    writeBatch
 } from "firebase/firestore";
+
+
 import { db } from "@/firebase";
-import Cars from "@/components/product/Cars"
+import { toast } from "react-toastify";
+
 
 const Products = () => {
-    const [cars, setCars] = useState([]);
-    const [data, setData] = useState([]);
-    const [search, setSearch] = useState("");
-    const itemsPerPage = 20;
-    const [itemOffset, setItemOffset] = useState(0);
 
-    const endOffset = itemOffset + itemsPerPage;
-    const currentItems = data.slice(itemOffset, endOffset);
-    const pageCount = Math.ceil(data.length / itemsPerPage);
+
+    const [products, setProducts] = useState([]);
+    const [filtered, setFiltered] = useState([]);
+
+    const [search, setSearch] = useState("");
+
+    const [city, setCity] = useState("");
+    const [type, setType] = useState("");
+    const [status, setStatus] = useState("");
+
+
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const [loading, setLoading] = useState(false);
+
+
+    const itemsPerPage = 20;
+
+    const [page, setPage] = useState(1);
+
+
+
+    const start =
+        (page - 1) * itemsPerPage;
+
+    const currentItems =
+        filtered.slice(
+            start,
+            start + itemsPerPage
+        );
+
+
+    const pages =
+        Math.ceil(
+            filtered.length / itemsPerPage
+        );
+
+
+
+    /*
+    =========================
+        FIRESTORE
+    =========================
+    */
+
 
     useEffect(() => {
-        if (!db) return; // Attendre que Firestore soit initialisé
-        const colRef = collection(db, "products");
+
+
+        let conditions = [];
+
+
+        if (city)
+            conditions.push(
+                where("city", "==", city)
+            );
+
+
+        if (type)
+            conditions.push(
+                where("type", "==", type)
+            );
+
+
+        if (status)
+            conditions.push(
+                where("status", "==", status)
+            );
+
+
         const q = query(
-            colRef,
-            where("status", "==", "validated"),
-            orderBy("createdAt", "desc"),
-            limit()
+            collection(db, "products"),
+            ...conditions,
+            orderBy(
+                "createdAt",
+                "desc"
+            )
         );
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            let content = [];
-            if (snapshot.docs) {
-                snapshot.docs.forEach((doc) =>
-                    content.push({ id: doc.id, ...doc.data() })
+
+
+
+        const unsubscribe =
+            onSnapshot(
+                q,
+                snapshot => {
+
+
+                    const data =
+                        snapshot.docs.map(
+                            doc => ({
+                                id: doc.id,
+                                ...doc.data()
+                            })
+                        );
+
+
+                    setProducts(data);
+                    setFiltered(data);
+
+                }
+            );
+
+
+        return unsubscribe;
+
+
+
+    }, [
+        city,
+        type,
+        status
+    ]);
+
+
+
+
+
+    /*
+    =========================
+        SEARCH
+    =========================
+    */
+
+
+    const searchFilter = (value) => {
+
+
+        setSearch(value);
+
+
+        const result =
+            products.filter(item => {
+
+
+                const text =
+                    (
+                        item.name +
+                        item.description +
+                        item.city
+                    )
+                        .toLowerCase();
+
+
+
+                return text.includes(
+                    value.toLowerCase()
                 );
-                setCars(content);
-                setData(content);
-            }
-        });
 
-        // Unsubscribe from events when no longer in use
-        return () => unsubscribe();
-    }, [cars]);
 
-    const searchFilter = (text) => {
-        const newData =
-            cars &&
-            cars.filter((item) => {
-                const itemData = item.description
-                    ? item.description.toUpperCase()
-                    : "".toUpperCase();
-                const textData = text.toUpperCase();
-                return itemData.indexOf(textData) > -1;
             });
-        setSearch(text);
-        setData(newData);
-        setItemOffset(0);
+
+
+
+        setFiltered(result);
+
+        setPage(1);
+
     };
 
-    const handlePageClick = (event, value) => {
-        const newOffset = (value * itemsPerPage) % data.length;
-        setItemOffset(newOffset);
+
+
+
+
+    /*
+    =========================
+        SELECTION
+    =========================
+    */
+
+
+    const selectProduct = (id) => {
+
+
+        setSelectedIds(prev =>
+
+            prev.includes(id)
+
+                ?
+
+                prev.filter(
+                    item => item !== id
+                )
+
+                :
+
+                [
+                    ...prev,
+                    id
+                ]
+
+        );
+
     };
+
+
+
+
+    const selectAll = () => {
+
+
+        if (
+            selectedIds.length === currentItems.length
+        ) {
+
+            setSelectedIds([]);
+
+            return;
+
+        }
+
+
+
+        setSelectedIds(
+            currentItems.map(
+                item => item.id
+            )
+        );
+
+
+    };
+
+
+
+
+
+    /*
+    =========================
+        ACTIONS GROUPÉES
+    =========================
+    */
+
+
+    const updateStatus = async (status) => {
+
+
+        if (!selectedIds.length)
+            return;
+
+
+
+        setLoading(true);
+
+
+        try {
+
+
+            const batch =
+                writeBatch(db);
+
+
+
+            selectedIds.forEach(id => {
+
+
+                batch.update(
+
+                    doc(
+                        db,
+                        "products",
+                        id
+                    ),
+
+                    {
+                        status,
+                        updatedAt:
+                            Date.now()
+                    }
+
+                );
+
+
+            });
+
+
+
+            await batch.commit();
+
+
+
+            toast.success(
+                "Action effectuée"
+            );
+
+
+
+            setSelectedIds([]);
+
+            setSelectionMode(false);
+
+
+
+        }
+        catch (error) {
+
+            toast.error(
+                error.message
+            );
+
+        }
+        finally {
+
+            setLoading(false);
+
+        }
+
+
+    };
+
+
+
+
+
+
+
+    const deleteSelected = async () => {
+
+
+        if (
+            !window.confirm(
+                `Supprimer ${selectedIds.length} annonces ?`
+            )
+        )
+            return;
+
+
+
+        setLoading(true);
+
+
+        try {
+
+
+            const batch =
+                writeBatch(db);
+
+
+
+            selectedIds.forEach(id => {
+
+
+                batch.delete(
+                    doc(
+                        db,
+                        "products",
+                        id
+                    )
+                );
+
+
+            });
+
+
+
+            await batch.commit();
+
+
+
+            toast.success(
+                "Annonces supprimées"
+            );
+
+
+
+            setSelectedIds([]);
+
+            setSelectionMode(false);
+
+
+        }
+        catch (error) {
+
+            toast.error(
+                error.message
+            );
+
+        }
+        finally {
+
+            setLoading(false);
+
+        }
+
+
+    };
+
+
+
+
 
     return (
+
         <main>
-            <Grid container sx={{ p: 3 }} spacing={2}>
-                <Grid item size={12}>
+
+
+            <Grid
+                container
+                spacing={2}
+                sx={{
+                    p: 3
+                }}
+            >
+
+
+
+                <Grid size={12}>
+
                     <SearchBar
                         searchFilter={searchFilter}
-                        placeholder={"Ex: TOYOTA IST, Suzuki Swift..."}
+                        placeholder="Rechercher un véhicule..."
                     />
+
                 </Grid>
-                {currentItems && currentItems.map((car) => <Cars key={car.id} data={car} />)}
+
+
+
+
+                <Grid size={{ xs: 12, md: 3 }}>
+
+                    <Button
+
+                        fullWidth
+
+                        variant={
+                            selectionMode
+                                ? "contained"
+                                : "outlined"
+                        }
+
+                        startIcon={
+                            <SelectAllIcon />
+                        }
+
+                        onClick={() => {
+
+                            setSelectionMode(
+                                !selectionMode
+                            );
+
+                            setSelectedIds([]);
+
+                        }}
+
+                    >
+
+                        {
+                            selectionMode
+                                ?
+                                "Annuler"
+                                :
+                                "Sélectionner"
+                        }
+
+
+                    </Button>
+
+
+                </Grid>
+
+
+
+
+
+                <Grid size={{ xs: 12, md: 3 }}>
+
+                    <FormControl fullWidth>
+
+                        <InputLabel>
+                            Ville
+                        </InputLabel>
+
+
+                        <Select
+                            value={city}
+                            label="Ville"
+                            onChange={
+                                e => setCity(
+                                    e.target.value
+                                )
+                            }
+                        >
+
+
+                            <MenuItem value="">
+                                Toutes
+                            </MenuItem>
+
+
+                            <MenuItem value="Kinshasa">
+                                Kinshasa
+                            </MenuItem>
+
+
+                            <MenuItem value="Lubumbashi">
+                                Lubumbashi
+                            </MenuItem>
+
+
+                            <MenuItem value="Goma">
+                                Goma
+                            </MenuItem>
+
+
+                            <MenuItem value="Matadi">
+                                Matadi
+                            </MenuItem>
+
+
+                        </Select>
+
+                    </FormControl>
+
+
+                </Grid>
+
+
+
+
+
+                <Grid size={{ xs: 12, md: 3 }}>
+
+                    <FormControl fullWidth>
+
+                        <InputLabel>
+                            Catégorie
+                        </InputLabel>
+
+
+                        <Select
+
+                            value={type}
+
+                            label="Catégorie"
+
+                            onChange={
+                                e => setType(
+                                    e.target.value
+                                )
+                            }
+
+                        >
+
+
+                            <MenuItem value="">
+                                Toutes
+                            </MenuItem>
+
+
+                            <MenuItem value="sale">
+                                Véhicules
+                            </MenuItem>
+
+
+                            <MenuItem value="rent">
+                                Location
+                            </MenuItem>
+
+
+                            <MenuItem value="parts">
+                                Pièces
+                            </MenuItem>
+
+
+                        </Select>
+
+
+                    </FormControl>
+
+
+                </Grid>
+
+
+
+
+
+                <Grid size={{ xs: 12, md: 3 }}>
+
+
+                    <FormControl fullWidth>
+
+                        <InputLabel>
+                            Statut
+                        </InputLabel>
+
+
+                        <Select
+
+                            value={status}
+
+                            label="Statut"
+
+                            onChange={
+                                e => setStatus(
+                                    e.target.value
+                                )
+                            }
+
+                        >
+
+
+                            <MenuItem value="">
+                                Tous
+                            </MenuItem>
+
+
+                            <MenuItem value="validated">
+                                Validés
+                            </MenuItem>
+
+
+                            <MenuItem value="init">
+                                En attente
+                            </MenuItem>
+
+
+                            <MenuItem value="hidden">
+                                Masqués
+                            </MenuItem>
+
+
+                            <MenuItem value="sold">
+                                Vendus
+                            </MenuItem>
+
+
+                        </Select>
+
+
+                    </FormControl>
+
+
+
+                </Grid>
+
+
+
+
+
+                {
+                    selectedIds.length > 0 &&
+
+                    <Grid size={12}>
+
+
+                        <Paper
+
+                            sx={{
+
+                                position: "sticky",
+
+                                top: 10,
+
+                                zIndex: 10,
+
+                                p: 2,
+
+                                borderRadius: 4,
+
+                                display: "flex",
+
+                                gap: 1,
+
+                                alignItems: "center",
+
+                                justifyContent: "space-between",
+
+                                flexWrap: "wrap"
+
+                            }}
+
+                        >
+
+
+                            <Box>
+
+                                <Chip
+
+                                    label={
+                                        `${selectedIds.length} sélectionnée(s)`
+                                    }
+
+                                />
+
+                            </Box>
+
+
+
+                            <Box
+                                display="flex"
+                                gap={1}
+                                flexWrap="wrap"
+                            >
+
+
+
+                                <Button
+
+                                    variant="contained"
+
+                                    color="success"
+
+                                    startIcon={
+                                        <CheckCircleOutlineIcon />
+                                    }
+
+                                    onClick={() =>
+                                        updateStatus(
+                                            "validated"
+                                        )
+                                    }
+
+                                >
+
+                                    Valider
+
+                                </Button>
+
+
+
+                                <Button
+
+                                    variant="outlined"
+
+                                    startIcon={
+                                        <VisibilityOffOutlinedIcon />
+                                    }
+
+                                    onClick={() =>
+                                        updateStatus(
+                                            "hidden"
+                                        )
+                                    }
+
+                                >
+
+                                    Masquer
+
+                                </Button>
+
+
+
+                                <Button
+
+                                    variant="outlined"
+
+                                    color="warning"
+
+                                    startIcon={
+                                        <SellOutlinedIcon />
+                                    }
+
+                                    onClick={() =>
+                                        updateStatus(
+                                            "sold"
+                                        )
+                                    }
+
+                                >
+
+                                    Vendu
+
+                                </Button>
+
+
+
+                                <Button
+
+                                    variant="contained"
+
+                                    color="error"
+
+                                    startIcon={
+                                        <DeleteIcon />
+                                    }
+
+                                    onClick={deleteSelected}
+
+                                >
+
+                                    Supprimer
+
+                                </Button>
+
+
+                            </Box>
+
+
+                        </Paper>
+
+
+                    </Grid>
+
+                }
+
+
+
+
+                {
+                    currentItems.map(product =>
+
+                        <Cars
+
+                            key={product.id}
+
+                            data={product}
+
+                            selectionMode={
+                                selectionMode
+                            }
+
+                            selected={
+                                selectedIds.includes(
+                                    product.id
+                                )
+                            }
+
+                            onSelect={
+                                selectProduct
+                            }
+
+
+                        />
+
+                    )
+
+                }
+
+
+
+
                 <Grid
-                    container
-                    direction={"row"}
-                    justifyContent={"center"}
-                    sx={{ mt: 2 }}
-                    item
                     size={12}
+                    display="flex"
+                    justifyContent="center"
                 >
+
+
                     <Pagination
-                        variant="outlined"
-                        color="primary"
-                        onChange={handlePageClick}
-                        count={pageCount}
+
+                        count={pages}
+
+                        page={page}
+
+                        onChange={
+                            (e, v) => setPage(v)
+                        }
+
                     />
+
+
                 </Grid>
+
+
+
+
             </Grid>
+
+
+
+
+            <Fab
+
+                color="primary"
+
+                href="/marketplace/publier"
+
+                component="a"
+
+                sx={{
+
+                    position: "fixed",
+
+                    right: 30,
+
+                    bottom: 30
+
+                }}
+
+            >
+
+                <AddIcon />
+
+            </Fab>
+
+
+
         </main>
-    );
-};
+
+    )
+
+}
+
 
 export default Products;
