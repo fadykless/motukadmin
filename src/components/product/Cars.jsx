@@ -271,8 +271,8 @@ const Cars = ({
                 fontWeight={'600'}
                 sx={{
                   mt: 1,
-                  backgroundColor: theme.palette.secondary.main,
-                  color: "red",
+                  backgroundColor: theme.palette.primary.main,
+                  color: "black",
                   p: 0.5,
                   width: "60%",
                   borderRadius: 1,

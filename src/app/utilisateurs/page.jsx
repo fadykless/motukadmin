@@ -254,7 +254,6 @@ const Users = () => {
                 p: 3
             }}
         >
-
             <Typography
                 variant="h4"
                 fontWeight={700}

@@ -1,181 +1,307 @@
 "use client";
 
-import * as React from "react";
-import { styled } from "@mui/material/styles";
-import MuiAppBar from "@mui/material/AppBar";
-import {
-  Toolbar,
-  Typography,
-  IconButton,
-  Box,
-  Avatar,
-  Badge,
-  Tooltip,
-} from "@mui/material";
-
-import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import Sidebar from "./Sidebar";
 
-import { useDispatch } from "react-redux";
-import { logOut } from "@/redux/actions/authActions";
-import { useRouter } from "next/navigation";
+import {
+  AppBar,
+  Avatar,
+  Badge,
+  Box,
+  Drawer,
+  IconButton,
+  InputBase,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+
+import { useTheme } from "@mui/material/styles";
+
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+
+import {
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
+
+import { auth, db } from "@/firebase";
+import { doc, getDoc } from "firebase/firestore";
+
 
 const drawerWidth = 270;
 
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  background: "#fff",
-  color: "#111",
-  boxShadow: "0 1px 8px rgba(0,0,0,.06)",
-  transition: theme.transitions.create(["width", "margin"]),
-  ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-  }),
-}));
 
 export default function Navbar() {
 
-  const [open, setOpen] = React.useState(true);
-
-  const dispatch = useDispatch();
+  const theme = useTheme();
 
   const router = useRouter();
 
-  const toggleDrawer = () => setOpen(!open);
+  const mobile = useMediaQuery(
+    theme.breakpoints.down("lg")
+  );
 
-  const redirect = () => router.push("/");
 
-  const handleLogOut = () => {
+  const [open, setOpen] = useState(false);
 
-    if (
-      window.confirm(
-        "Êtes-vous sûr de vouloir vous déconnecter ?"
-      )
-    ) {
+  const [user, setUser] = useState(null);
 
-      dispatch(logOut(redirect));
+  const [profile, setProfile] = useState(null);
 
-    }
+  const [anchorEl, setAnchorEl] = useState(null);
+
+
+
+  useEffect(() => {
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (currentUser) => {
+
+        if (currentUser) {
+
+          setUser(currentUser);
+
+
+          const userSnap = await getDoc(
+            doc(db, "users", currentUser.uid)
+          );
+
+
+          if (userSnap.exists()) {
+
+            setProfile(userSnap.data());
+
+          }
+
+        }
+
+      }
+    );
+
+
+    return () => unsubscribe();
+
+  }, []);
+
+
+
+  const handleLogout = async () => {
+
+    await signOut(auth);
+
+    router.replace("/auth");
 
   };
 
+
+
+  const handleMenu = (event) => {
+
+    setAnchorEl(event.currentTarget);
+
+  };
+
+
+  const closeMenu = () => {
+
+    setAnchorEl(null);
+
+  };
+
+
+  const username =
+    profile?.name ||
+    user?.displayName ||
+    "Utilisateur";
+
+
+  const avatar =
+    profile?.avatar ||
+    user?.photoURL ||
+    "";
+
+
+
   return (
+
     <>
 
       <AppBar
         position="fixed"
+        color="inherit"
         elevation={0}
-        open={open}
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          backgroundColor: '#000'
+        }}
       >
 
         <Toolbar>
 
-          {!open && (
 
-            <IconButton
-              onClick={toggleDrawer}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
+          {
+            mobile && (
 
-          )}
+              <IconButton
+                onClick={() => setOpen(true)}
+                sx={{ mr: 1 }}
+              >
+
+                <MenuRoundedIcon />
+
+              </IconButton>
+
+            )
+          }
+
+
+
+          <Typography
+            variant="h6"
+            fontWeight={900}
+            sx={{ mr: 4 }}
+          >
+
+            <img
+              src="/logo_motuka.png"
+              width={150}
+              alt="Motuka"
+            />
+
+          </Typography>
+
+
+
 
           <Box
             sx={{
-              display: "flex",
+              display: {
+                xs: "none",
+                md: "flex",
+              },
               alignItems: "center",
-              gap: 2,
-              flexGrow: 1,
+              bgcolor: "#f3f4f6",
+              px: 2,
+              borderRadius: 50,
+              width: 350,
+              ml: 2,
             }}
           >
 
-            {/* <img
-              src="/logo_motuka.png"
-              alt="Motuka"
-              height={38}
-            /> */}
+            <SearchRoundedIcon
+              fontSize="small"
+              sx={{
+                mr: 1,
+                color: "text.secondary",
+              }}
+            />
+            <InputBase
+              placeholder="Rechercher..."
+              fullWidth
+            />
+          </Box>
+          <Box sx={{ flexGrow: 1 }} />
 
-            <Box>
+          <IconButton>
+            <Badge
+              badgeContent={3}
+              color="error"
+            >
+              <NotificationsNoneRoundedIcon sx={{ color: 'white' }} />
+            </Badge>
+          </IconButton>
+
+          <IconButton
+            onClick={handleMenu}
+            sx={{ ml: 1 }}
+          >
+            <Avatar
+              src={avatar}
+              sx={{
+                width: 38,
+                height: 38,
+              }}
+            >
+              {
+                username
+                  ?.charAt(0)
+                  ?.toUpperCase()
+              }
+            </Avatar>
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={closeMenu}
+          >
+            <Box
+              sx={{
+                px: 2,
+                py: 1,
+              }}
+            >
 
               <Typography
                 fontWeight={700}
-                fontSize={18}
               >
-                MOTUKA Admin
+                {username}
               </Typography>
 
               <Typography
                 variant="caption"
                 color="text.secondary"
               >
-                Tableau de bord
+                {profile?.role}
               </Typography>
-
             </Box>
 
-          </Box>
 
-          <Tooltip title="Notifications">
-
-            <IconButton>
-
-              <Badge
-                badgeContent={3}
-                color="error"
-              >
-                <NotificationsOutlinedIcon />
-              </Badge>
-
-            </IconButton>
-
-          </Tooltip>
-
-          <Tooltip title="Administrateur">
-
-            <IconButton sx={{ ml: 1 }}>
-
-              <Avatar
-                src="/avatar.png"
-                sx={{
-                  width: 38,
-                  height: 38,
-                }}
-              />
-
-            </IconButton>
-
-          </Tooltip>
-
-          <Tooltip title="Déconnexion">
-
-            <IconButton
-              onClick={handleLogOut}
-              color="error"
+            <MenuItem
+              onClick={handleLogout}
             >
-
-              <LogoutRoundedIcon />
-
-            </IconButton>
-
-          </Tooltip>
-
+              <LogoutRoundedIcon
+                sx={{ mr: 1 }}
+                fontSize="small"
+              />
+              Déconnexion
+            </MenuItem>
+          </Menu>
         </Toolbar>
-
       </AppBar>
 
-      <Sidebar
-        open={open}
-        setOpen={setOpen}
-        toggleDrawer={toggleDrawer}
-      />
+      {!mobile && <Sidebar />}
 
+      <Drawer
+        anchor="left"
+        open={open}
+        onClose={() => setOpen(false)}
+        ModalProps={{
+          keepMounted: true
+        }}
+        PaperProps={{
+          sx: {
+            width: drawerWidth,
+          }
+        }}
+      >
+
+        <Sidebar
+          mobile
+          closeDrawer={() => setOpen(false)}
+        />
+      </Drawer>
     </>
 
   );

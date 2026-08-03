@@ -17,9 +17,7 @@ export default function AdminGuard({ children }) {
     const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
-
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-
             try {
 
                 // Non connecté

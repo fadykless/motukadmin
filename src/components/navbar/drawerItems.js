@@ -11,18 +11,20 @@ import ReportRoundedIcon from "@mui/icons-material/ReportRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 
+const iconColor = 'white'
+
 export const menus = [
   {
     title: "",
     items: [
       {
         label: "Dashboard",
-        icon: <DashboardRoundedIcon />,
+        icon: <DashboardRoundedIcon sx={{ color: iconColor }} />,
         href: "/dashboard",
       },
       {
         label: "Marketplace",
-        icon: <DirectionsCarRoundedIcon />,
+        icon: <DirectionsCarRoundedIcon sx={{ color: iconColor }} />,
         href: "/marketplace",
       },
     ],
@@ -34,12 +36,12 @@ export const menus = [
     items: [
       {
         label: "Utilisateurs",
-        icon: <PeopleRoundedIcon />,
+        icon: <PeopleRoundedIcon sx={{ color: iconColor }} />,
         href: "/utilisateurs",
       },
       {
         label: "Favoris",
-        icon: <FavoriteRoundedIcon />,
+        icon: <FavoriteRoundedIcon sx={{ color: iconColor }} />,
         href: "/favorites",
       },
     ],
@@ -50,12 +52,12 @@ export const menus = [
     items: [
       {
         label: "Paiements",
-        icon: <PaymentsRoundedIcon />,
+        icon: <PaymentsRoundedIcon sx={{ color: iconColor }} />,
         href: "/payments",
       },
       {
         label: "Publicités Premium",
-        icon: <CampaignRoundedIcon />,
+        icon: <CampaignRoundedIcon sx={{ color: iconColor }} />,
         href: "/premium",
       },
     ],
@@ -66,17 +68,17 @@ export const menus = [
     items: [
       {
         label: "Motuka AI",
-        icon: <SmartToyRoundedIcon />,
+        icon: <SmartToyRoundedIcon sx={{ color: iconColor }} />,
         href: "/ai",
       },
       {
         label: "Signalements",
-        icon: <ReportRoundedIcon />,
+        icon: <ReportRoundedIcon sx={{ color: iconColor }} />,
         href: "/reports",
       },
       {
         label: "Support",
-        icon: <SupportAgentRoundedIcon />,
+        icon: <SupportAgentRoundedIcon sx={{ color: iconColor }} />,
         href: "/support",
       },
     ],
@@ -87,12 +89,12 @@ export const menus = [
     items: [
       {
         label: "Statistiques",
-        icon: <BarChartRoundedIcon />,
+        icon: <BarChartRoundedIcon sx={{ color: iconColor }} />,
         href: "/analytics",
       },
       {
         label: "Paramètres",
-        icon: <SettingsRoundedIcon />,
+        icon: <SettingsRoundedIcon sx={{ color: iconColor }} />,
         href: "/settings",
       },
     ],

@@ -1,54 +1,97 @@
-'use client'
-import React from "react";
-import { Box, Container, CssBaseline, Toolbar } from "@mui/material";
-import Footer from "./footer";
-import Navbar from "./navbar";
+'use client';
+
+import { useEffect, useState } from "react";
+import {
+    Box,
+    Container,
+    CssBaseline,
+    Toolbar,
+    CircularProgress,
+} from "@mui/material";
+
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase";
 
+import Navbar from "./navbar";
+import Footer from "./footer";
+import AdminGuard from "./auth/AdminGuard";
 
-const Layout = ({ children }) => {
-    // const [admin, setAdmin] = useState(null);
+export default function Layout({ children }) {
 
-    console.log(auth)
+    const [user, setUser] = useState(undefined);
 
-    // useEffect(() => {
-    //     setAdmin(localStorage.getItem("market1fluenceAdminID"));
-    // }, [admin]);
+    useEffect(() => {
 
-    if (!auth && auth.currentUser.uid) {
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            setUser(firebaseUser);
+        });
+
+        return () => unsubscribe();
+
+    }, []);
+
+    // En attente de Firebase
+    if (user === undefined) {
         return (
-            <Box>
-                <CssBaseline />
-                {children}
-                <Footer />
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "100vh",
+                }}
+            >
+                <CircularProgress />
             </Box>
         );
     }
 
+    // Non connecté
+    if (!user) {
+        return (
+            <Box>
+                <CssBaseline />
+                {children}
+            </Box>
+        );
+    }
+
+    // Connecté
     return (
         <Box sx={{ display: "flex" }}>
             <CssBaseline />
+
             <Navbar />
+
             <Box
                 component="main"
                 sx={{
-                    backgroundColor: (theme) =>
+                    flexGrow: 1,
+                    minHeight: "100vh",
+                    overflow: "auto",
+                    bgcolor: (theme) =>
                         theme.palette.mode === "light"
                             ? theme.palette.grey[100]
                             : theme.palette.grey[900],
-                    flexGrow: 1,
-                    height: "100vh",
-                    overflow: "auto",
                 }}
             >
                 <Toolbar />
-                <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                    {children}
-                    <Footer sx={{ pt: 4 }} />
+
+                <Container
+                    maxWidth="xl"
+                    sx={{
+                        mt: 4,
+                        mb: 4,
+                    }}
+                >
+                    <AdminGuard>
+                        {children}
+                    </AdminGuard>
+
+                    <Footer sx={{ mt: 5 }} />
                 </Container>
+
             </Box>
         </Box>
-    )
-};
-
-export default Layout;
+    );
+}

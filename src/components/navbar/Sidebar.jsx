@@ -13,6 +13,7 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  useTheme,
 } from "@mui/material";
 import { menus } from "./drawerItems";
 
@@ -23,6 +24,7 @@ export default function Sidebar({
   closeDrawer,
 }) {
   const pathname = usePathname();
+  const theme = useTheme()
 
   return (
     <Drawer
@@ -30,11 +32,15 @@ export default function Sidebar({
       sx={{
         width: drawerWidth,
         flexShrink: 0,
+
         "& .MuiDrawer-paper": {
           width: drawerWidth,
           borderRight: "1px solid",
           borderColor: "divider",
           boxSizing: "border-box",
+          backgroundColor: '#111',
+          color: 'white'
+
         },
       }}
     >
@@ -76,7 +82,7 @@ export default function Sidebar({
                   px: 3,
                   mb: 1,
                   display: "block",
-                  color: "text.secondary",
+                  color: theme.palette.primary.main,
                   fontWeight: 700,
                   letterSpacing: 1,
                 }}

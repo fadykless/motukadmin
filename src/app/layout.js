@@ -24,6 +24,18 @@ const clientSideEmotionCache = createEmotionCache()
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
+      <head>
+        <meta charSet="utf-8" />
+        <link rel="icon" href="/icon.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#fed336" />
+        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap"
+          rel="stylesheet" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Provider store={store}>
           <CacheProvider value={clientSideEmotionCache}>
