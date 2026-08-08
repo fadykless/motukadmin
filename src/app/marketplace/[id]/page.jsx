@@ -11,6 +11,8 @@ import { db } from "@/firebase";
 import ImageCarousel from "@/components/includes/ImageCarousel";
 import Head from "next/head";
 //import { etatLabel } from "@/functions";
+import parse from 'html-react-parser'
+import { Phone } from "@mui/icons-material";
 
 // Fonction pour récupérer les données côté serveur
 export async function generateMetadata({ params }) {
@@ -111,7 +113,16 @@ const SaleDetails = async ({ params }) => {
                                         {product.price} USD
                                     </Typography>
 
-                                    <Typography sx={{ my: 2 }}>{product.description}</Typography>
+                                    <Typography sx={{ my: 2 }}>{parse(product.description)}</Typography>
+                                    <Button
+                                        component='a'
+                                        href={'tel:' + product.phoneNumber}
+                                        startIcon={<Phone />}
+                                        color="black" variant="outlined"
+                                        sx={{ borderRadius: 20 }}
+                                    >
+                                        {product.phoneNumber}
+                                    </Button>
                                 </Container>
                             </Box>
                         </Grid>

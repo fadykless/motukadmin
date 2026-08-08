@@ -182,22 +182,6 @@ const Products = () => {
         );
     };
 
-
-    const selectAll = () => {
-        if (
-            selectedIds.length === currentItems.length
-        ) {
-            setSelectedIds([]);
-            return;
-        }
-
-        setSelectedIds(
-            currentItems.map(
-                item => item.id
-            )
-        );
-    };
-
     /*
     =========================
         ACTIONS GROUPÉES
@@ -245,7 +229,6 @@ const Products = () => {
         }
     };
 
-
     const deleteSelected = async () => {
         if (
             !window.confirm(
@@ -288,7 +271,6 @@ const Products = () => {
         }
     };
 
-
     return (
         <main>
             <Grid
@@ -300,7 +282,6 @@ const Products = () => {
             >
 
                 <Grid size={12}>
-
                     <SearchBar
                         searchFilter={searchFilter}
                         placeholder="Rechercher un véhicule..."
@@ -337,7 +318,6 @@ const Products = () => {
                         }
                     </Button>
                 </Grid>
-
 
                 <Grid size={{ xs: 12, md: 3 }}>
                     <FormControl fullWidth>
@@ -454,6 +434,7 @@ const Products = () => {
                     selectedIds.length > 0 &&
                     <Grid size={12}>
                         <Paper
+                            elevation={0}
                             sx={{
                                 position: "sticky",
                                 top: 10,
@@ -539,9 +520,6 @@ const Products = () => {
                         </Paper>
                     </Grid>
                 }
-
-
-
 
                 {
                     currentItems.map(product =>

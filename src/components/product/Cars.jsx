@@ -34,6 +34,7 @@ import {
 import { db } from "@/firebase";
 import { toast } from "react-toastify";
 import { Checkbox } from "@mui/material";
+import parse from 'html-react-parser'
 
 const Cars = ({
   data,
@@ -182,13 +183,14 @@ const Cars = ({
                 gap: 1
               }}
             >
-              <Box sx={{ position: 'absolute', top: -40, left: -75 }}>
+              <Box sx={{ position: 'absolute', bottom: 0, left: 0 }}>
                 {selectionMode && (
                   <Checkbox
                     checked={selected}
                     onChange={() => onSelect(data.id)}
                     sx={{
                       bgcolor: "white",
+                      mt: 40
                     }}
                   />
                 )}
@@ -208,8 +210,8 @@ const Cars = ({
                     data.status === "validated"
                       ? "success"
                       : data.status === "sold"
-                        ? "warning"
-                        : "default"
+                        ? "danger"
+                        : "warning"
                   }
                 />
               </Box>
@@ -256,7 +258,7 @@ const Cars = ({
                 textDecoration: 'none',
               }}
             >
-              {data.description.slice(0, 100) + "..."}
+              {parse(data.description.slice(0, 100) + "...")}
             </Typography>
             <Box
               sx={{
@@ -362,7 +364,7 @@ const Cars = ({
 
         </MenuItem>
 
-      </Menu>s
+      </Menu>
     </Fragment>
   );
 };
