@@ -19,6 +19,17 @@ const CKEditor = dynamic(() => import("@ckeditor/ckeditor5-react").then(mod => m
 const ClassicEditor = typeof window !== "undefined" ? require("@ckeditor/ckeditor5-build-classic") : null;
 
 
+const partners = [
+    {
+        name: 'Chris Cinji',
+        phoneNumber: "+243894129470"
+    },
+    {
+        name: 'Chicco',
+        phoneNumber: "+243897701443"
+    }
+]
+
 const AddArticle = () => {
     const router = useRouter();
     const [product, setProduct] = useState({ images: [] });
@@ -126,6 +137,55 @@ const AddArticle = () => {
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 6 }}>
+                            <InputLabel id="author-label">Partenaire</InputLabel>
+                            <Select
+                                labelId="author-label"
+                                value={product.phoneNumber}
+                                name="type"
+                                onChange={handleChange}
+                                fullWidth
+                            >
+
+                                {partners.map(partner => (
+                                    <MenuItem key={partner.phoneNumber} value={partner.phoneNumber}>
+                                        {partner.name}
+                                    </MenuItem>
+                                ))
+                                }
+
+                            </Select>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <InputLabel id="author-label">Ville</InputLabel>
+                            <Select
+                                labelId="author-label"
+                                value={product.city || ""}
+                                name="type"
+                                onChange={handleChange}
+                                fullWidth
+                                required
+                            >
+
+                                <MenuItem key={'Kinshasa'} value={'Kinshasa'}>
+                                    Kinshasa
+                                </MenuItem>
+                                <MenuItem key={'Matadi'} value={'Matadi'}>
+                                    Matadi
+                                </MenuItem>
+                                <MenuItem key={'Goma'} value={'Goma'}>
+                                    Goma
+                                </MenuItem>
+                                <MenuItem key={'Lubumbashi'} value={'Lubumbashi'}>
+                                    Lubumbashi
+                                </MenuItem>
+                                <MenuItem key={'Kolwezi'} value={'Kolwezi'}>
+                                    Kolwezi
+                                </MenuItem>
+                            </Select>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <TextField
                                 name="price"
                                 label="Prix en USD"
@@ -140,7 +200,6 @@ const AddArticle = () => {
                             <TextField
                                 name="phoneNumber"
                                 label="Téléphone"
-                                required
                                 type="phone"
                                 fullWidth
                                 onChange={handleChange}
