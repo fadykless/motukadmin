@@ -141,7 +141,7 @@ const AddArticle = () => {
                             <Select
                                 labelId="author-label"
                                 value={product.phoneNumber}
-                                name="type"
+                                name="phoneNumber"
                                 onChange={handleChange}
                                 fullWidth
                             >
@@ -161,7 +161,7 @@ const AddArticle = () => {
                             <Select
                                 labelId="author-label"
                                 value={product.city || ""}
-                                name="type"
+                                name="city"
                                 onChange={handleChange}
                                 fullWidth
                                 required
