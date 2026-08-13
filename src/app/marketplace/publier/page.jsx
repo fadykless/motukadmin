@@ -55,7 +55,7 @@ const AddArticle = () => {
         });
     };
 
-    const redirect = () => router.push("/annonces");
+    const redirect = () => router.push("/marketplace");
 
     const handleSubmit = async (e) => {
         e.preventDefault();

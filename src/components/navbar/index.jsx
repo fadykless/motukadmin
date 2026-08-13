@@ -155,7 +155,7 @@ export default function Navbar() {
 
               <IconButton
                 onClick={() => setOpen(true)}
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, color: theme.palette.primary.main }}
               >
 
                 <MenuRoundedIcon />
