@@ -35,7 +35,7 @@ import { db } from "@/firebase";
 import { toast } from "react-toastify";
 import { Checkbox } from "@mui/material";
 import parse from 'html-react-parser'
-
+import { WhatsApp, Verified, VerifiedRounded, ShareRounded, PhoneRounded, SellOutlined, Delete } from "@mui/icons-material";
 const Cars = ({
   data,
   selectionMode = false,
@@ -64,29 +64,6 @@ const Cars = ({
       );
 
       toast.success("Annonce validée");
-
-    } catch (err) {
-
-      toast.error(err.message);
-
-    }
-
-    closeMenu();
-
-  };
-
-  const removeMarketplace = async () => {
-
-    try {
-
-      await updateDoc(
-        doc(db, "products", data.id),
-        {
-          status: "hidden"
-        }
-      );
-
-      toast.success("Annonce retirée du marketplace");
 
     } catch (err) {
 
@@ -141,6 +118,68 @@ const Cars = ({
 
     closeMenu();
 
+  };
+
+  const contactSeller = () => {
+    if (!data.phoneNumber) {
+      toast.error("Le vendeur n'a pas renseigné de numéro de téléphone");
+      return;
+    }
+
+    let phone = data.phoneNumber.replace(/\D/g, "");
+
+    if (phone.startsWith("0")) {
+      phone = `243${phone.slice(1)}`;
+    }
+
+    if (phone.startsWith("2430")) {
+      phone = `243${phone.slice(4)}`;
+    }
+
+    const url = `https://motukapp.com/marketplace/${data.id}`;
+
+    const message = `Bonjour, ce véhicule est-il disponible?\n ${url}`;
+
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank");
+
+    closeMenu();
+  };
+
+  const toggleCertification = async () => {
+    try {
+      await updateDoc(
+        doc(db, "products", data.id),
+        {
+          verified: !data.verified,
+          verifiedAt: !data.verified ? Date.now() : null,
+        }
+      );
+
+      toast.success(
+        data.verified
+          ? "Certification retirée"
+          : "Annonce certifiée"
+      );
+    } catch (err) {
+      toast.error(err.message);
+    }
+
+    closeMenu();
+  };
+
+  const shareWhatsApp = () => {
+    const url = `https://motukapp.com/marketplace/${data.id}`;
+
+    const message = `${data.name} | ${data.price ? `${data.price} USD` : "Prix sur demande"
+      }\n📍 ${data.city || "RDC"}\n\nDécouvrez cette annonce sur Motuka :\n${url}`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank");
+
+    closeMenu();
   };
 
   return (
@@ -229,13 +268,37 @@ const Cars = ({
             >
               <Box sx={{ flex: 1 }}>
 
-                <Typography
-                  variant="h5"
-                  fontWeight={600}
-                  color="text.primary"
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    minWidth: 0,
+                  }}
                 >
-                  {data.name}
-                </Typography>
+                  <Typography
+                    variant="h5"
+                    fontWeight={600}
+                    color="text.primary"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {data.name}
+                  </Typography>
+
+                  {data.verified && (
+                    <VerifiedRounded
+                      sx={{
+                        fontSize: 21,
+                        color: "secondary.main",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                </Box>
               </Box>
 
               <IconButton
@@ -292,78 +355,72 @@ const Cars = ({
         open={open}
         onClose={closeMenu}
       >
-
         <MenuItem
           component="a"
           href={`/admin/products/${data.id}`}
         >
-
           <EditIcon sx={{ mr: 1 }} />
-
           Modifier
-
         </MenuItem>
 
-        {
-          data.status !== "validated" &&
+        {data.phoneNumber && (
+          <MenuItem onClick={contactSeller}>
+            <WhatsApp
+              sx={{
+                mr: 1,
+                color: "#25D366",
+              }}
+            />
+            Contacter le vendeur
+          </MenuItem>
+        )}
 
-          <MenuItem
-            onClick={validateProduct}
-          >
+        <MenuItem onClick={shareWhatsApp}>
+          <ShareRounded sx={{ mr: 1 }} />
+          Partager sur WhatsApp
+        </MenuItem>
 
-            <CheckCircleOutlineIcon sx={{ mr: 1 }} />
-
+        {data.status !== "validated" && (
+          <MenuItem onClick={validateProduct}>
+            <CheckCircleOutline sx={{ mr: 1 }} />
             Valider
-
           </MenuItem>
+        )}
 
-        }
-
-        {
-          data.status === "validated" &&
-
-          <MenuItem
-            onClick={removeMarketplace}
-          >
-
-            <VisibilityOffOutlinedIcon sx={{ mr: 1 }} />
-
-            Retirer du marketplace
-
+        {data.status === "validated" && (
+          <MenuItem onClick={toggleCertification}>
+            <VerifiedRounded
+              sx={{
+                mr: 1,
+                color: data.verified
+                  ? "secondary.main"
+                  : "inherit",
+              }}
+            />
+            {data.verified
+              ? "Retirer la certification"
+              : "Certifier"}
           </MenuItem>
+        )}
 
-        }
-
-        {
-          data.status !== "sold" &&
-
-          <MenuItem
-            onClick={markAsSold}
-          >
-
-            <SellOutlinedIcon sx={{ mr: 1 }} />
-
+        {data.status !== "sold" && (
+          <MenuItem onClick={markAsSold}>
+            <SellOutlined sx={{ mr: 1 }} />
             Marquer vendu
-
           </MenuItem>
-
-        }
+        )}
 
         <Divider />
 
         <MenuItem
           onClick={deleteAd}
           sx={{
-            color: "error.main"
+            color: "error.main",
           }}
         >
-
-          <DeleteIcon sx={{ mr: 1 }} />
-
+          <Delete sx={{ mr: 1 }} />
           Supprimer
-
         </MenuItem>
-
       </Menu>
     </Fragment>
   );

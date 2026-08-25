@@ -1,8 +1,8 @@
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
-import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
+import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
@@ -11,7 +11,7 @@ import ReportRoundedIcon from "@mui/icons-material/ReportRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 
-const iconColor = 'white'
+const iconColor = "white";
 
 export const menus = [
   {
@@ -29,8 +29,6 @@ export const menus = [
       },
     ],
   },
-
-
   {
     title: "UTILISATEURS",
     items: [
@@ -44,9 +42,13 @@ export const menus = [
         icon: <FavoriteRoundedIcon sx={{ color: iconColor }} />,
         href: "/favorites",
       },
+      {
+        label: "Partenaires",
+        icon: <HandshakeRoundedIcon sx={{ color: iconColor }} />,
+        href: "/partenaires",
+      },
     ],
   },
-
   {
     title: "BUSINESS",
     items: [
@@ -62,7 +64,6 @@ export const menus = [
       },
     ],
   },
-
   {
     title: "INTELLIGENCE",
     items: [
@@ -83,7 +84,6 @@ export const menus = [
       },
     ],
   },
-
   {
     title: "ADMINISTRATION",
     items: [

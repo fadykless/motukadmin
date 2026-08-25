@@ -47,60 +47,29 @@ const Users = () => {
     const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
-
-
         const q = query(
-
-            collection(db, "users"),
-
-            // orderBy(
-            //     "createdAt",
-            //     "desc"
-            // )
-
+            collection(db, "users")
         );
-
-
 
         const unsubscribe =
             onSnapshot(q, (snapshot) => {
-
-
                 const result =
                     snapshot.docs.map(doc => ({
-
                         id: doc.id,
-
                         ...doc.data()
-
                     }));
-
-
                 setUsers(result);
-
                 setData(result);
-
-
             });
-
-
-
         return unsubscribe;
-
-
-    }, []);
+    }, [data]);
 
 
     const filterUsers = (value) => {
-
-
         setSearch(value);
-
 
         const result =
             users.filter(user => {
-
-
                 const text =
                     (
                         user.displayName +
@@ -108,39 +77,22 @@ const Users = () => {
                         user.phoneNumber
                     )
                         .toLowerCase();
-
-
-
                 return text.includes(
                     value.toLowerCase()
                 );
-
-
             });
 
-
         setData(result);
-
-
     };
 
 
     const filterRole = (value) => {
-
-
         setRole(value);
 
-
-
         if (!value) {
-
             setData(users);
-
             return;
-
         }
-
-
 
         setData(
             users.filter(
@@ -248,6 +200,7 @@ const Users = () => {
 
     };
 
+
     return (
         <Box
             sx={{
@@ -276,26 +229,16 @@ const Users = () => {
 
 
                     <TextField
-
                         fullWidth
-
                         label="Rechercher un utilisateur"
-
                         value={search}
-
                         onChange={
                             e => filterUsers(
                                 e.target.value
                             )
                         }
-
                     />
-
-
                 </Grid>
-
-
-
 
 
                 <Grid
@@ -305,79 +248,51 @@ const Users = () => {
                     }}
                 >
 
-
                     <FormControl fullWidth>
-
-
                         <InputLabel>
                             Rôle
                         </InputLabel>
-
-
                         <Select
-
                             value={role}
-
                             label="Rôle"
-
                             onChange={
                                 e => filterRole(
                                     e.target.value
                                 )
                             }
-
                         >
-
 
                             <MenuItem value="">
                                 Tous
                             </MenuItem>
 
-
                             <MenuItem value="client">
                                 Clients
                             </MenuItem>
-
 
                             <MenuItem value="seller">
                                 Vendeurs
                             </MenuItem>
 
-
                             <MenuItem value="driver">
                                 Chauffeurs
                             </MenuItem>
 
-
                             <MenuItem value="garage">
                                 Garages
                             </MenuItem>
-
-
-
                         </Select>
-
-
                     </FormControl>
-
-
                 </Grid>
-
-
             </Grid>
 
             <Grid
                 container
                 spacing={2}
             >
-
-
                 {
-                    data.map(user => (
-
-
+                    data && data.map(user => (
                         <Grid
-
                             size={{
                                 xs: 12,
                                 md: 6,
@@ -385,16 +300,12 @@ const Users = () => {
                             }}
 
                             key={user.id}
-
                         >
 
 
                             <Paper
-
                                 sx={{
-
                                     p: 2.5,
-
                                     borderRadius: 4
 
                                 }}
@@ -403,13 +314,9 @@ const Users = () => {
 
 
                                 <Box
-
                                     display="flex"
-
                                     alignItems="center"
-
                                     justifyContent="space-between"
-
                                 >
 
 
@@ -421,31 +328,23 @@ const Users = () => {
 
 
                                         <Avatar
-
                                             src={
-                                                user.photoURL
+                                                user?.photoURL
                                             }
-
                                         >
-
                                             <PersonIcon />
-
                                         </Avatar>
 
 
 
                                         <Box>
-
-
                                             <Typography
                                                 fontWeight={700}
                                             >
-
                                                 {
-                                                    user.displayName ||
+                                                    user?.displayName ||
                                                     "Utilisateur"
                                                 }
-
                                             </Typography>
 
 
@@ -456,89 +355,51 @@ const Users = () => {
                                             >
 
                                                 {
-                                                    user.email
+                                                    user?.email
                                                 }
 
                                             </Typography>
-
-
-
                                         </Box>
-
-
-
                                     </Box>
 
-
-
-
-
                                     <IconButton
-
                                         onClick={
                                             e => openMenu(
                                                 e,
                                                 user
                                             )
                                         }
-
                                     >
-
-
                                         <MoreVertIcon />
-
-
                                     </IconButton>
-
-
                                 </Box>
-
-
-
-
 
                                 <Divider
                                     sx={{
                                         my: 2
                                     }}
                                 />
-
-
-
-
                                 <Typography>
-
-                                    📞 {user.phoneNumber || "-"}
-
+                                    📞 {user?.phoneNumber || "-"}
                                 </Typography>
-
-
-
                                 <Box
                                     display="flex"
                                     gap={1}
                                     mt={2}
                                 >
 
-
                                     <Chip
-
                                         size="small"
-
                                         label={
                                             user.role ||
                                             "client"
                                         }
-
                                     />
 
-
                                     <Chip
-
                                         size="small"
-
                                         label={
-                                            user.status === "blocked"
+                                            user?.status === "blocked"
                                                 ?
                                                 "Bloqué"
                                                 :
@@ -546,33 +407,18 @@ const Users = () => {
                                         }
 
                                         color={
-                                            user.status === "blocked"
+                                            user?.status === "blocked"
                                                 ?
                                                 "error"
                                                 :
                                                 "success"
                                         }
-
                                     />
-
-
                                 </Box>
-
-
-
                             </Paper>
-
-
-
                         </Grid>
-
-
                     ))
-
                 }
-
-
-
             </Grid>
 
             <Menu
@@ -606,62 +452,37 @@ const Users = () => {
 
                 {
                     selectedUser?.status === "blocked"
-
                     &&
-
                     <MenuItem
-
                         onClick={() =>
                             updateStatus(
                                 "active"
                             )
                         }
-
                     >
-
-
                         <CheckCircleIcon
                             sx={{
                                 mr: 1
                             }}
                         />
-
                         Réactiver
-
-
                     </MenuItem>
-
-
                 }
 
-
-
-
                 <MenuItem
-
                     onClick={deleteUser}
-
                     sx={{
                         color: "error.main"
                     }}
-
                 >
-
 
                     <DeleteIcon
                         sx={{
                             mr: 1
                         }}
                     />
-
-
                     Supprimer
-
-
                 </MenuItem>
-
-
-
             </Menu>
         </Box>
     )

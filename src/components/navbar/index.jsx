@@ -1,10 +1,7 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
 import Sidebar from "./Sidebar";
-
 import {
   AppBar,
   Avatar,
@@ -19,7 +16,6 @@ import {
   Typography,
   useMediaQuery,
 } from "@mui/material";
-
 import { useTheme } from "@mui/material/styles";
 
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
@@ -35,29 +31,19 @@ import {
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-
 const drawerWidth = 270;
 
-
 export default function Navbar() {
-
   const theme = useTheme();
-
   const router = useRouter();
-
   const mobile = useMediaQuery(
     theme.breakpoints.down("lg")
   );
 
-
   const [open, setOpen] = useState(false);
-
   const [user, setUser] = useState(null);
-
   const [profile, setProfile] = useState(null);
-
   const [anchorEl, setAnchorEl] = useState(null);
-
 
 
   useEffect(() => {
@@ -92,49 +78,32 @@ export default function Navbar() {
 
   }, []);
 
-
-
   const handleLogout = async () => {
-
     await signOut(auth);
-
     router.replace("/auth");
 
   };
 
-
-
   const handleMenu = (event) => {
-
     setAnchorEl(event.currentTarget);
-
   };
-
 
   const closeMenu = () => {
-
     setAnchorEl(null);
-
   };
-
 
   const username =
     profile?.name ||
     user?.displayName ||
     "Utilisateur";
 
-
   const avatar =
     profile?.avatar ||
     user?.photoURL ||
     "";
 
-
-
   return (
-
     <>
-
       <AppBar
         position="fixed"
         color="inherit"
@@ -148,8 +117,6 @@ export default function Navbar() {
       >
 
         <Toolbar>
-
-
           {
             mobile && (
 
@@ -165,8 +132,6 @@ export default function Navbar() {
             )
           }
 
-
-
           <Typography
             variant="h6"
             fontWeight={900}
@@ -180,9 +145,6 @@ export default function Navbar() {
             />
 
           </Typography>
-
-
-
 
           <Box
             sx={{
@@ -296,14 +258,12 @@ export default function Navbar() {
           }
         }}
       >
-
         <Sidebar
           mobile
           closeDrawer={() => setOpen(false)}
         />
       </Drawer>
     </>
-
   );
 
 }

@@ -1,260 +1,604 @@
 'use client';
-import { Box, Button, Grid, InputLabel, MenuItem, Paper, Select, TextField, Typography } from "@mui/material";
-import React, { useState } from "react";
+
+import {
+    Box,
+    Button,
+    Grid,
+    InputLabel,
+    LinearProgress,
+    MenuItem,
+    Paper,
+    Select,
+    TextField,
+    Typography,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
 import DashboardPageHeader from "@/components/includes/DashboardPageHeader";
 import CameraAlt from "@mui/icons-material/CameraAlt";
 import { LoadingButton } from "@mui/lab";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import {
+    getStorage,
+    ref,
+    uploadBytesResumable,
+    getDownloadURL
+} from "firebase/storage";
 import { db } from "@/firebase";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic"; //
-import { addDoc, collection } from "firebase/firestore";
+import dynamic from "next/dynamic";
+import {
+    addDoc,
+    collection,
+    onSnapshot
+} from "firebase/firestore";
+import { toast } from "react-toastify";
+import { DirectionsCarRounded } from "@mui/icons-material";
 
-
-const CKEditor = dynamic(() => import("@ckeditor/ckeditor5-react").then(mod => mod.CKEditor), {
-    ssr: false,
-    loading: () => <p>Chargement de l’éditeur...</p>,
-});
-
-const ClassicEditor = typeof window !== "undefined" ? require("@ckeditor/ckeditor5-build-classic") : null;
-
-
-const partners = [
+const CKEditor = dynamic(
+    () =>
+        import("@ckeditor/ckeditor5-react").then(
+            (mod) => mod.CKEditor
+        ),
     {
-        name: 'Chris Cinji',
-        phoneNumber: "+243894129470"
-    },
-    {
-        name: 'Chicco',
-        phoneNumber: "+243897701443"
+        ssr: false,
+        loading: () => <p>Chargement de l’éditeur...</p>,
     }
-]
+);
+
+const ClassicEditor =
+    typeof window !== "undefined"
+        ? require("@ckeditor/ckeditor5-build-classic")
+        : null;
+
+const cities = [
+    "Kinshasa",
+    "Matadi",
+    "Goma",
+    "Lubumbashi",
+    "Kolwezi",
+];
 
 const AddArticle = () => {
     const router = useRouter();
-    const [product, setProduct] = useState({ images: [] });
+
+    const [product, setProduct] = useState({
+        images: [],
+    });
+
+    const [partners, setPartners] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [previews, setPreviews] = useState([]);
 
-    const handleChange = (e) => setProduct({ ...product, [e.target.name]: e.target.value });
+    /*
+    =========================
+    PARTENAIRES
+    =========================
+    */
 
-    // Fonction pour importer et afficher les images
-    const loadFile = (event) => {
-        const files = event.target.files;
-        const imageArray = Array.from(files);
-        const imagePreviews = [];
+    useEffect(() => {
+        const unsubscribe = onSnapshot(
+            collection(db, "partners"),
+            (snapshot) => {
+                const data = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
 
-        imageArray.forEach((file) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                imagePreviews.push(reader.result);
-                setProduct((prev) => ({ ...prev, images: imageArray }));
-                setPreviews([...imagePreviews]);
-            };
-            reader.readAsDataURL(file);
-        });
+                setPartners(data);
+            },
+            (error) => {
+                console.error(error);
+                toast.error(
+                    "Impossible de charger les partenaires"
+                );
+            }
+        );
+
+        return unsubscribe;
+    }, []);
+
+    console.log(partners)
+
+    /*
+    =========================
+    CHANGE
+    =========================
+    */
+
+    const handleChange = (e) => {
+        setProduct((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }));
     };
 
-    const redirect = () => router.push("/marketplace");
+    /*
+    =========================
+    PARTENAIRE
+    =========================
+    */
+
+    const handlePartnerChange = (e) => {
+        const partnerId = e.target.value;
+
+        const partner = partners.find(
+            (item) => item.id === partnerId
+        );
+
+        if (!partner) {
+            setProduct((prev) => ({
+                ...prev,
+                partner: "",
+            }));
+
+            return;
+        }
+
+        setProduct((prev) => ({
+            ...prev,
+            partner: partnerId,
+            partnerName: partner.name || "",
+            phoneNumber: partner.phoneNumber || "",
+            city: partner.city || "",
+        }));
+    };
+
+    /*
+    =========================
+    IMAGES
+    =========================
+    */
+
+    const loadFile = (event) => {
+        const files = Array.from(event.target.files || []);
+
+        if (!files.length) {
+            return;
+        }
+
+        setProduct((prev) => ({
+            ...prev,
+            images: files,
+        }));
+
+        const imagePreviews = files.map((file) =>
+            URL.createObjectURL(file)
+        );
+
+        setPreviews(imagePreviews);
+    };
+
+    /*
+    =========================
+    UPLOAD IMAGE
+    =========================
+    */
+
+    const uploadImages = async (images) => {
+        if (!images.length) {
+            throw new Error(
+                "Veuillez importer au moins une image."
+            );
+        }
+
+        const storage = getStorage();
+
+        let totalBytes = images.reduce(
+            (total, image) => total + image.size,
+            0
+        );
+
+        let uploadedBytes = 0;
+
+        setUploadProgress(0);
+
+        const promises = images.map((image) => {
+            return new Promise((resolve, reject) => {
+                const uniqueImageName = `${Date.now()}_${Math.random()
+                    .toString(36)
+                    .substring(2)}_${image.name}`;
+
+                const storageRef = ref(
+                    storage,
+                    `images/${uniqueImageName}`
+                );
+
+                const metadata = {
+                    contentType: image.type,
+                };
+
+                const uploadTask =
+                    uploadBytesResumable(
+                        storageRef,
+                        image,
+                        metadata
+                    );
+
+                uploadTask.on(
+                    "state_changed",
+                    (snapshot) => {
+                        const currentUploaded =
+                            uploadedBytes +
+                            snapshot.bytesTransferred;
+
+                        const progress =
+                            (currentUploaded /
+                                totalBytes) *
+                            100;
+
+                        setUploadProgress(
+                            Math.min(
+                                Math.round(progress),
+                                100
+                            )
+                        );
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    async () => {
+                        try {
+                            const downloadURL =
+                                await getDownloadURL(
+                                    uploadTask.snapshot
+                                        .ref
+                                );
+
+                            uploadedBytes += image.size;
+
+                            const progress =
+                                (uploadedBytes /
+                                    totalBytes) *
+                                100;
+
+                            setUploadProgress(
+                                Math.min(
+                                    Math.round(progress),
+                                    100
+                                )
+                            );
+
+                            resolve(downloadURL);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }
+                );
+            });
+        });
+
+        return Promise.all(promises);
+    };
+
+    /*
+    =========================
+    SUBMIT
+    =========================
+    */
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
 
-        const storage = getStorage();
-        const colRef = collection(db, "products");
+        if (!product.images?.length) {
+            toast.error(
+                "Veuillez importer au moins une image."
+            );
+            return;
+        }
+
+        if (product.partner && !product.phoneNumber) {
+            toast.error(
+                "Le numéro du partenaire est introuvable."
+            );
+            return;
+        }
+
+        if (product.partner && !product.city) {
+            toast.error(
+                "La ville du partenaire est introuvable."
+            );
+            return;
+        }
+
+        setLoading(true);
+        setUploadProgress(0);
 
         try {
-            // Tableau pour stocker les promesses d'upload d'images
-            const imageUploadPromises = product.images.map((image) => {
-                return new Promise((resolve, reject) => {
-                    const uniqueImageName = `${new Date().getTime()}_${image.name}`; // Générer un nom unique
-                    const storageRef = ref(storage, "images/" + uniqueImageName);
-                    const metadata = { contentType: image.type };
+            const imageURLs = await uploadImages(
+                product.images
+            );
 
-                    const uploadTask = uploadBytesResumable(storageRef, image, metadata);
+            const colRef = collection(
+                db,
+                "products"
+            );
 
-                    uploadTask.on(
-                        "state_changed",
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            console.log(`Upload is ${progress}% done for ${image.name}`);
-                        },
-                        (error) => {
-                            console.error(`Error uploading image ${image.name}:`, error);
-                            reject(error);
-                        },
-                        () => {
-                            // Récupérer l'URL après téléchargement
-                            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                                resolve(downloadURL);
-                            });
-                        }
-                    );
-                });
-            });
-
-            // Attendre que toutes les images soient uploadées
-            const imageURLs = await Promise.all(imageUploadPromises);
-
-            // Ajouter le document avec les URLs des images à Firestore
             await addDoc(colRef, {
                 ...product,
-                images: imageURLs, // Stocker les URLs des images dans le document
-                createdAt: new Date().getTime(),
-                status: 'validated'
+                images: imageURLs,
+                createdAt: Date.now(),
+                status: "validated",
             });
 
+            setUploadProgress(100);
+
+            toast.success(
+                "Annonce publiée avec succès"
+            );
+
+            router.push("/marketplace");
+        } catch (error) {
+            console.error(error);
+
+            toast.error(
+                error.message ||
+                "Une erreur est survenue"
+            );
+        } finally {
             setLoading(false);
-            redirect()
-        } catch (err) {
-            setLoading(false);
-            console.log("Error adding product:", err);
         }
     };
-
 
     return (
         <main>
             <Grid container spacing={2}>
-                <Grid item xs={12}>
-                    <DashboardPageHeader title="Publier une annonce" />
+                <Grid size={12}>
+                    {/* HEADER */}
+                    <Box sx={{ mb: 4 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 1,
+                            }}
+                        >
+                            <DirectionsCarRounded
+                                sx={{
+                                    fontSize: 30,
+                                    color: "primary.main",
+                                }}
+                            />
+
+                            <Typography
+                                variant="h4"
+                                color="text.primary"
+                                sx={{ fontWeight: 800 }}
+                            >
+                                Publier une annonce
+                            </Typography>
+                        </Box>
+
+                        <Typography color="text.secondary">
+                            Ajoutez un véhicule ou un produit au marketplace de Motuka.
+                        </Typography>
+                    </Box>
                 </Grid>
             </Grid>
 
-            <Paper elevation={0} sx={{ p: 3 }}>
+            <Paper
+                elevation={0}
+                sx={{ p: 3 }}
+            >
                 <form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12 }}>
+
+                        {/* TITRE */}
+                        <Grid size={12}>
                             <TextField
                                 name="name"
                                 label="Titre"
-                                required
-                                type="text"
                                 fullWidth
+                                required
+                                value={product.name || ""}
                                 onChange={handleChange}
                             />
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <InputLabel id="author-label">Partenaire</InputLabel>
+                        {/* PARTENAIRE */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6,
+                            }}
+                        >
+                            <InputLabel>
+                                Partenaire
+                            </InputLabel>
+
                             <Select
-                                labelId="author-label"
-                                value={product.phoneNumber}
-                                name="phoneNumber"
-                                onChange={handleChange}
-                                fullWidth
-                            >
-
-                                {partners.map(partner => (
-                                    <MenuItem key={partner.phoneNumber} value={partner.phoneNumber}>
-                                        {partner.name}
-                                    </MenuItem>
-                                ))
+                                value={
+                                    product.partner || ""
                                 }
+                                onChange={
+                                    handlePartnerChange
+                                }
+                                fullWidth
+                                displayEmpty
+                            >
+                                <MenuItem value="">
+                                    Aucun partenaire
+                                </MenuItem>
 
+                                {partners.map(
+                                    (partner) => (
+                                        <MenuItem
+                                            key={
+                                                partner.id
+                                            }
+                                            value={
+                                                partner.id
+                                            }
+                                        >
+                                            {partner.displayName}
+                                        </MenuItem>
+                                    )
+                                )}
                             </Select>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <InputLabel id="author-label">Ville</InputLabel>
+                        {/* VILLE */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6,
+                            }}
+                        >
+                            <InputLabel>
+                                Ville
+                            </InputLabel>
+
                             <Select
-                                labelId="author-label"
-                                value={product.city || ""}
+                                value={
+                                    product.city || ""
+                                }
                                 name="city"
-                                onChange={handleChange}
+                                onChange={
+                                    handleChange
+                                }
                                 fullWidth
                                 required
                             >
+                                <MenuItem value="">
+                                    Sélectionner
+                                </MenuItem>
 
-                                <MenuItem key={'Kinshasa'} value={'Kinshasa'}>
-                                    Kinshasa
-                                </MenuItem>
-                                <MenuItem key={'Matadi'} value={'Matadi'}>
-                                    Matadi
-                                </MenuItem>
-                                <MenuItem key={'Goma'} value={'Goma'}>
-                                    Goma
-                                </MenuItem>
-                                <MenuItem key={'Lubumbashi'} value={'Lubumbashi'}>
-                                    Lubumbashi
-                                </MenuItem>
-                                <MenuItem key={'Kolwezi'} value={'Kolwezi'}>
-                                    Kolwezi
-                                </MenuItem>
+                                {cities.map(
+                                    (city) => (
+                                        <MenuItem
+                                            key={city}
+                                            value={city}
+                                        >
+                                            {city}
+                                        </MenuItem>
+                                    )
+                                )}
                             </Select>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        {/* PRIX */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6,
+                            }}
+                        >
                             <TextField
                                 name="price"
                                 label="Prix en USD"
-                                required
-                                type="text"
                                 fullWidth
-                                onChange={handleChange}
+                                required
+                                type="number"
+                                value={
+                                    product.price || ""
+                                }
+                                onChange={
+                                    handleChange
+                                }
                             />
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
+                        {/* TELEPHONE */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6,
+                            }}
+                        >
                             <TextField
                                 name="phoneNumber"
                                 label="Téléphone"
-                                type="phone"
                                 fullWidth
-                                onChange={handleChange}
+                                type="tel"
+                                value={
+                                    product.phoneNumber ||
+                                    ""
+                                }
+                                onChange={
+                                    handleChange
+                                }
                             />
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <InputLabel id="author-label">Type d'annonce</InputLabel>
+                        {/* TYPE */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6,
+                            }}
+                        >
+                            <InputLabel>
+                                Type d'annonce
+                            </InputLabel>
+
                             <Select
-                                labelId="author-label"
-                                value={product.type || ""}
+                                value={
+                                    product.type || ""
+                                }
                                 name="type"
-                                onChange={handleChange}
+                                onChange={
+                                    handleChange
+                                }
                                 fullWidth
                                 required
                             >
-
-                                <MenuItem key={'rent'} value={'rent'}>
+                                <MenuItem value="rent">
                                     Location de véhicule
                                 </MenuItem>
-                                <MenuItem key={'sale'} value={'sale'}>
+
+                                <MenuItem value="sale">
                                     Véhicule à vendre
                                 </MenuItem>
-                                <MenuItem key={'parts'} value={'parts'}>
+
+                                <MenuItem value="parts">
                                     Pièce ou accessoire
                                 </MenuItem>
-
                             </Select>
                         </Grid>
 
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <InputLabel id="author-label">Etat du produit</InputLabel>
+                        {/* ETAT */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6,
+                            }}
+                        >
+                            <InputLabel>
+                                Etat du produit
+                            </InputLabel>
+
                             <Select
-                                labelId="author-label"
-                                value={product.etat || ""}
+                                value={
+                                    product.etat || ""
+                                }
                                 name="etat"
-                                onChange={handleChange}
+                                onChange={
+                                    handleChange
+                                }
                                 fullWidth
                                 required
                             >
-                                <MenuItem key={'used'} value={'used'}>
-                                    {"Occasion"}
+                                <MenuItem value="used">
+                                    Occasion
                                 </MenuItem>
-                                <MenuItem key={'new'} value={'new'}>
-                                    {"Neuf"}
+
+                                <MenuItem value="new">
+                                    Neuf
                                 </MenuItem>
-                                <MenuItem key={'damaged'} value={'damaged'}>
-                                    {"Endommagé"}
+
+                                <MenuItem value="damaged">
+                                    Endommagé
                                 </MenuItem>
                             </Select>
                         </Grid>
 
+                        {/* DESCRIPTION */}
                         <Grid size={12}>
                             <Box sx={{ mt: 3 }}>
-                                <Typography variant="h6" gutterBottom>
+                                <Typography
+                                    variant="h6"
+                                    gutterBottom
+                                >
                                     Description
                                 </Typography>
 
@@ -262,23 +606,50 @@ const AddArticle = () => {
                                     elevation={0}
                                     sx={{
                                         borderRadius: 3,
-                                        "& .ck-editor__editable": {
-                                            minHeight: "200px",
-                                            backgroundColor: "white",
-                                            borderRadius: 2,
-                                            border: "1px solid #ccc",
+                                        "& .ck-editor__editable":
+                                        {
+                                            minHeight:
+                                                "200px",
+                                            backgroundColor:
+                                                "white",
+                                            borderRadius:
+                                                2,
+                                            border:
+                                                "1px solid #ccc",
                                             padding: 2,
                                         },
-                                        "& .ck-toolbar": { borderRadius: "12px 12px 0 0" },
+                                        "& .ck-toolbar":
+                                        {
+                                            borderRadius:
+                                                "12px 12px 0 0",
+                                        },
                                     }}
                                 >
                                     {ClassicEditor && (
                                         <CKEditor
-                                            editor={ClassicEditor}
-                                            data={product.description || ""}
-                                            onChange={(event, editor) => {
-                                                const data = editor.getData();
-                                                setProduct({ ...product, description: data });
+                                            editor={
+                                                ClassicEditor
+                                            }
+                                            data={
+                                                product.description ||
+                                                ""
+                                            }
+                                            onChange={(
+                                                event,
+                                                editor
+                                            ) => {
+                                                const value =
+                                                    editor.getData();
+
+                                                setProduct(
+                                                    (
+                                                        prev
+                                                    ) => ({
+                                                        ...prev,
+                                                        description:
+                                                            value,
+                                                    })
+                                                );
                                             }}
                                             config={{
                                                 toolbar: [
@@ -296,44 +667,155 @@ const AddArticle = () => {
                                             }}
                                         />
                                     )}
-
                                 </Paper>
                             </Box>
                         </Grid>
 
-                        <Grid sx={{ mt: 5 }} size={12}>
+                        {/* IMAGES */}
+                        <Grid
+                            sx={{ mt: 5 }}
+                            size={12}
+                        >
                             <input
                                 accept="image/*"
-                                style={{ display: "none" }}
+                                style={{
+                                    display: "none",
+                                }}
                                 id="import"
                                 type="file"
                                 onChange={loadFile}
                                 multiple
+                                required
                             />
+
                             <label htmlFor="import">
-                                <Button startIcon={<CameraAlt />} variant="outlined" component="span">
-                                    Importer des images
+                                <Button
+                                    startIcon={
+                                        <CameraAlt />
+                                    }
+                                    variant="outlined"
+                                    component="span"
+                                >
+                                    Importer des images *
                                 </Button>
                             </label>
+
+                            {!product.images?.length && (
+                                <Typography
+                                    variant="caption"
+                                    color="error"
+                                    sx={{
+                                        display: "block",
+                                        mt: 1,
+                                    }}
+                                >
+                                    Au moins une image
+                                    est obligatoire.
+                                </Typography>
+                            )}
                         </Grid>
 
-                        <Grid size={12}>
-                            <Typography sx={{ textAlign: "center" }}>
-                                {previews.map((preview, i) => (
-                                    <img key={i} src={preview} alt={`Preview ${i}`} width={200} style={{ margin: 5 }} />
-                                ))}
-                            </Typography>
-                        </Grid>
+                        {/* PREVIEWS */}
+                        {previews.length > 0 && (
+                            <Grid size={12}>
+                                <Typography>
+                                    {previews.map(
+                                        (
+                                            preview,
+                                            i
+                                        ) => (
+                                            <img
+                                                key={i}
+                                                src={
+                                                    preview
+                                                }
+                                                alt={`Preview ${i}`}
+                                                width={
+                                                    150
+                                                }
+                                                style={{
+                                                    margin: 5,
+                                                    borderRadius: 8,
+                                                    objectFit:
+                                                        "cover",
+                                                }}
+                                            />
+                                        )
+                                    )}
+                                </Typography>
+                            </Grid>
+                        )}
 
-                        <Grid size={8}></Grid>
-                        <Grid size={4}>
+                        {/* PROGRESS */}
+                        {loading && (
+                            <Grid size={12}>
+                                <Box sx={{ mt: 2 }}>
+                                    <Box
+                                        sx={{
+                                            display:
+                                                "flex",
+                                            justifyContent:
+                                                "space-between",
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Upload des
+                                            images...
+                                        </Typography>
+
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={600}
+                                        >
+                                            {
+                                                uploadProgress
+                                            }
+                                            %
+                                        </Typography>
+                                    </Box>
+
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={
+                                            uploadProgress
+                                        }
+                                        sx={{
+                                            height: 8,
+                                            borderRadius: 10,
+                                        }}
+                                    />
+                                </Box>
+                            </Grid>
+                        )}
+
+                        {/* BUTTON */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 4,
+                            }}
+                            sx={{
+                                ml: "auto",
+                                mt: 3,
+                            }}
+                        >
                             <LoadingButton
                                 loading={loading}
                                 variant="contained"
                                 fullWidth
                                 type="submit"
-                                sx={{ color: "white", borderRadius: 10 }}
-                                disableElevation
+                                disabled={
+                                    !product.images
+                                        ?.length
+                                }
+                                sx={{
+                                    color: "white",
+                                    borderRadius: 10,
+                                }}
                             >
                                 Valider
                             </LoadingButton>

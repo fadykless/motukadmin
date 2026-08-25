@@ -31,6 +31,7 @@ import {
 import { db } from "@/firebase";
 import moment from "moment";
 import "moment/locale/fr";
+import { DashboardRounded } from "@mui/icons-material";
 
 
 const Dashboard = () => {
@@ -105,7 +106,7 @@ const Dashboard = () => {
             icon: <PeopleRoundedIcon />
         },
         {
-            title: "En attente",
+            title: "Offres reçues",
             value: stats.pending,
             icon: <PendingActionsRoundedIcon />
         },
@@ -132,16 +133,36 @@ const Dashboard = () => {
                 p: 3
             }}
         >
-            <Typography
-                variant="h4"
-                sx={{
-                    fontWeight: 700,
-                    mb: 3,
-                    color: 'black'
-                }}
-            >
-                Dashboard
-            </Typography>
+            {/* HEADER */}
+            <Box sx={{ mb: 4 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                    }}
+                >
+                    <DashboardRounded
+                        sx={{
+                            fontSize: 30,
+                            color: "primary.main",
+                        }}
+                    />
+
+                    <Typography
+                        variant="h4"
+                        color="text.primary"
+                        sx={{ fontWeight: 800 }}
+                    >
+                        Dashboard
+                    </Typography>
+                </Box>
+
+                <Typography color="text.secondary">
+                    Suivez l’activité et les performances de Motuka en un coup d’œil.
+                </Typography>
+            </Box>
 
 
             <Grid
@@ -291,6 +312,7 @@ const Dashboard = () => {
                         </Typography>
 
                         <Button
+                            disableElevation
                             fullWidth
                             variant="contained"
                             href="/marketplace"
@@ -305,7 +327,7 @@ const Dashboard = () => {
                         <Button
                             fullWidth
                             variant="outlined"
-                            href="/users"
+                            href="/utilisateurs"
                             sx={{
                                 mb: 1,
                                 borderRadius: 3
