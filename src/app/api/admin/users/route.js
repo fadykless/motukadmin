@@ -24,9 +24,8 @@ export async function PATCH(request) {
   try {
     const actor = await requireStaff(request, ["admin"]);
     const { uid, status } = await request.json();
-    if (typeof uid !== "string" || !["active", "blocked"].includes(status)) throw new HttpError(400, "Données invalides");
+    if (typeof uid !== "string" || !uid.trim() || uid.length > 128 || uid !== uid.trim() || uid.includes("/") || !["active", "blocked"].includes(status)) throw new HttpError(400, "Données invalides");
     if (uid === actor.uid) throw new HttpError(403, "Modification de votre propre statut interdite");
-    if (!uid || uid.includes("/")) throw new HttpError(400, "UID invalide");
     const db = adminDb();
     await db.runTransaction(async tx => {
       const ref = db.collection("users").doc(uid);
