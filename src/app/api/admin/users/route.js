@@ -26,8 +26,9 @@ export async function PATCH(request) {
           tx.update(partnerRef, { status: "suspended", updatedAt: Date.now() });
         }
       } else {
-        // Un déblocage ne réactive jamais automatiquement le statut commissionnaire.
-        tx.update(userRef, { status, isPartner: false });
+        // Le déblocage ne modifie pas les droits commissionnaires existants.
+        // Un compte suspendu reste suspendu ; un compte actif ne perd pas ses droits.
+        tx.update(userRef, { status });
       }
     });
     return Response.json({ ok: true });
