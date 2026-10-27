@@ -41,6 +41,14 @@ export async function GET(request) {
     if (cursor) {
       const cursorDoc = await db.collection("contactRequests").doc(cursor).get();
       if (!cursorDoc.exists || !cursorDoc.get("createdAt")) throw new HttpError(400, "Curseur invalide");
+      const current = cursorDoc.data();
+      if (current.contactChannel !== "motuka" ||
+          (status && current.status !== status) ||
+          (commissionnaireId && current.commissionnaireId !== commissionnaireId) ||
+          (productId && current.productId !== productId) ||
+          (assignedTo && current.assignedTo !== assignedTo)) {
+        throw new HttpError(400, "Curseur incompatible avec les filtres");
+      }
       query = query.startAfter(cursorDoc);
     }
 
