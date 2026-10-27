@@ -6,7 +6,6 @@ import { adminApi } from "@/lib/client/admin-api";
 
 export default function AddPartner() {
   const [users, setUsers] = useState([]);
-  const [partners, setPartners] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -14,11 +13,10 @@ export default function AddPartner() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([adminApi("/api/admin/users"), adminApi("/api/admin/partners")])
-      .then(([usersResponse, partnersResponse]) => {
+    adminApi("/api/admin/users")
+      .then(usersResponse => {
         if (!active) return;
         setUsers(usersResponse.users || []);
-        setPartners(partnersResponse.partners || []);
       })
       .catch(error => { if (active) setMessage({ open: true, severity: "error", text: error.message }); })
       .finally(() => { if (active) setLoading(false); });
@@ -26,18 +24,17 @@ export default function AddPartner() {
   }, []);
 
   const candidates = useMemo(() => {
-    const assigned = new Set(partners.map(p => p.uid || p.id));
-    return users.filter(user => user.id && !assigned.has(user.id) && !user.isPartner && !["blocked", "disabled"].includes(user.status));
-  }, [users, partners]);
+    return users.filter(user => user.id && !user.isPartner && !["blocked", "disabled"].includes(user.status));
+  }, [users]);
 
   const assign = async () => {
     if (!selected?.id) return;
     setSaving(true);
     try {
       await adminApi("/api/admin/partners", { method: "POST", body: JSON.stringify({ uid: selected.id }) });
-      setPartners(prev => [...prev, { id: selected.id, uid: selected.id, status: "pending" }]);
+      setUsers(prev => prev.map(user => user.id === selected.id ? { ...user, isPartner: true } : user));
       setSelected(null);
-      setMessage({ open: true, severity: "success", text: "Utilisateur assigné comme commissionnaire (en attente d’activation)." });
+      setMessage({ open: true, severity: "success", text: "Utilisateur assigné comme commissionnaire." });
     } catch (error) {
       setMessage({ open: true, severity: "error", text: error.message });
     } finally { setSaving(false); }
