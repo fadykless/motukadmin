@@ -28,6 +28,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Lint
         run: npm run lint
+      - name: Validate security smoke-test script syntax
+        run: node --check scripts/test-admin-access.mjs
       - name: Build
         run: npm run build
         env:
