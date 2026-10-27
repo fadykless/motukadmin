@@ -50,14 +50,6 @@ const statuses = [
         value: "active",
         label: "Actifs",
     },
-    {
-        value: "pending",
-        label: "En attente",
-    },
-    {
-        value: "suspended",
-        label: "Suspendus",
-    },
 ];
 
 const getInitials = (name = "") => {
