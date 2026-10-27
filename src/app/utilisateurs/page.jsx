@@ -2,9 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 
+import { Box, Grid, Paper, Typography, Avatar, Chip, IconButton, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Divider } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PersonIcon from "@mui/icons-material/Person";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { adminApi } from "@/lib/client/admin-api";
 
-import { db } from "@/firebase";
 import { toast } from "react-toastify";
 
 const Users = () => {
@@ -31,9 +36,9 @@ const Users = () => {
             users.filter(user => {
                 const text =
                     (
-                        user.displayName +
-                        user.email +
-                        user.phoneNumber
+                        (user.displayName || "") +
+                        (user.email || "") +
+                        (user.phoneNumber || "")
                     )
                         .toLowerCase();
                 return text.includes(
