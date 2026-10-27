@@ -26,11 +26,11 @@ import { db } from "@/firebase";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
-    addDoc,
     collection,
     onSnapshot
 } from "firebase/firestore";
 import { toast } from "react-toastify";
+import { adminApi } from "@/lib/client/admin-api";
 import { DirectionsCarRounded } from "@mui/icons-material";
 
 const CKEditor = dynamic(
@@ -278,65 +278,7 @@ const AddArticle = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!product.images?.length) {
-            toast.error(
-                "Veuillez importer au moins une image."
-            );
-            return;
-        }
-
-        if (product.partner && !product.phoneNumber) {
-            toast.error(
-                "Le numéro du partenaire est introuvable."
-            );
-            return;
-        }
-
-        if (product.partner && !product.city) {
-            toast.error(
-                "La ville du partenaire est introuvable."
-            );
-            return;
-        }
-
-        setLoading(true);
-        setUploadProgress(0);
-
-        try {
-            const imageURLs = await uploadImages(
-                product.images
-            );
-
-            const colRef = collection(
-                db,
-                "products"
-            );
-
-            await addDoc(colRef, {
-                ...product,
-                images: imageURLs,
-                createdAt: Date.now(),
-                status: "validated",
-            });
-
-            setUploadProgress(100);
-
-            toast.success(
-                "Annonce publiée avec succès"
-            );
-
-            router.push("/marketplace");
-        } catch (error) {
-            console.error(error);
-
-            toast.error(
-                error.message ||
-                "Une erreur est survenue"
-            );
-        } finally {
-            setLoading(false);
-        }
+        toast.error("Publication administrative temporairement désactivée : contrôle du propriétaire et des données privées en cours.");
     };
 
     return (
