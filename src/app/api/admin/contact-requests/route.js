@@ -44,39 +44,37 @@ export async function GET(request) {
       query = query.startAfter(cursorDoc);
     }
 
-    const result = await query.limit(limit + 1).get();
-    const docs = result.docs.slice(0, limit);
-    const productIds = [...new Set(docs.map(doc => doc.get("productId")).filter(validId))];
-    const productSnaps = productIds.length
-      ? await db.getAll(...productIds.map(productId => db.collection("products").doc(productId)))
-      : [];
-    const commissionnaireProducts = new Map(productSnaps.map(snap => [
-      snap.id,
-      snap.exists && snap.get("listingOrigin") === "commissionnaire"
-        ? snap.get("commissionnaireId") : null
-    ]));
-    return Response.json({
-      items: docs.filter(doc => {
+    const items = [];
+    let last = null;
+    let exhausted = false;
+    for (let batchNumber = 0; batchNumber < 10 && items.length < limit; batchNumber++) {
+      const snap = await query.limit(50).get();
+      if (snap.empty) { exhausted = true; break; }
+      const ids = [...new Set(snap.docs.map(doc => doc.get("productId")).filter(validId))];
+      const products = ids.length ? await db.getAll(...ids.map(id => db.collection("products").doc(id))) : [];
+      const byId = new Map(products.map(doc => [doc.id, doc.exists ? doc.data() : null]));
+      for (const doc of snap.docs) {
+        last = doc;
         const value = doc.data();
-        return validId(value.productId) &&
-          validId(value.commissionnaireId) &&
-          commissionnaireProducts.get(value.productId) === value.commissionnaireId;
-      }).map(doc => {
-        const value = doc.data();
-        return {
+        const product = byId.get(value.productId);
+        if (!product || product.listingOrigin !== "commissionnaire" ||
+            product.commissionnaireId !== value.commissionnaireId) continue;
+        items.push({
           id: doc.id,
-          productId: value.productId || null,
+          productId: value.productId,
+          productName: typeof product.name === "string" ? product.name : "",
           buyerId: value.buyerId || null,
-          commissionnaireId: value.commissionnaireId || null,
+          commissionnaireId: value.commissionnaireId,
           status: value.status || "new",
           assignedTo: value.assignedTo || null,
-          closedReason: value.closedReason || null,
-          createdAt: value.createdAt?.toDate?.()?.toISOString() || null,
-          updatedAt: value.updatedAt?.toDate?.()?.toISOString() || null
-        };
-      }),
-      nextCursor: result.size > limit ? docs[docs.length - 1].id : null
-    });
+          createdAt: value.createdAt?.toDate?.()?.toISOString() || null
+        });
+        if (items.length === limit) break;
+      }
+      if (snap.size < 50) { exhausted = true; break; }
+      query = query.startAfter(last);
+    }
+    return Response.json({ items, nextCursor: exhausted || !last ? null : last.id });
   } catch (error) {
     return fail(error);
   }
