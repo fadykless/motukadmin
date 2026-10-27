@@ -16,7 +16,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { addDoc, collection } from "firebase/firestore";
+import { adminApi } from "@/lib/client/admin-api";
 import { db } from "@/firebase";
 import { LoadingButton } from "@mui/lab";
 
@@ -45,6 +45,7 @@ const normalizePhone = (phone) => {
 export default function AddPartner() {
     const [form, setForm] = useState({
         name: "",
+        uid: "",
         phone: "",
         city: "",
     });
@@ -100,20 +101,13 @@ export default function AddPartner() {
         setLoading(true);
 
         try {
-            await addDoc(collection(db, "partners"), {
-                displayName: form.name.trim(),
-                phoneNumber,
-                city: form.city,
-                role: "partner",
-                partnerType: "commissionnaire",
-                status: "active",
-                createdAt: Date.now(),
-            });
+            await adminApi("/api/admin/partners", { method: "POST", body: JSON.stringify({ uid: form.uid, displayName: form.name, phoneNumber, city: form.city }) });
 
             showMessage("Commissionnaire ajouté avec succès.");
 
             setForm({
                 name: "",
+                uid: "",
                 phone: "",
                 city: "",
             });
@@ -151,6 +145,7 @@ export default function AddPartner() {
             >
                 <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                     <form onSubmit={handleSubmit}>
+                        <TextField fullWidth required label="UID Firebase Auth du commissionnaire" value={form.uid || ""} onChange={e => handleChange("uid", e.target.value)} sx={{ mb: 2 }} />
                         <TextField
                             label="Nom complet"
                             value={form.name}
