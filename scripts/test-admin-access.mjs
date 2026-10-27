@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Read-only authorization smoke tests against an isolated Motuka Admin preproduction deployment.
 // Usage:
-// ADMIN_BASE_URL=https://preprod.example.com ADMIN_ID_TOKEN=... MANAGER_ID_TOKEN=... USER_ID_TOKEN=... node scripts/test-admin-access.mjs
+// ADMIN_BASE_URL=https://staging.example.com ADMIN_STAGING_HOST=staging.example.com ADMIN_STAGING_CONFIRMED=yes ADMIN_ID_TOKEN=... MANAGER_ID_TOKEN=... USER_ID_TOKEN=... node scripts/test-admin-access.mjs
 // Do not use production tokens or production endpoints.
 const base = process.env.ADMIN_BASE_URL;
 const tokens = {
@@ -14,6 +14,11 @@ if (!base || !/^https:\/\//.test(base) || !Object.values(tokens).every(Boolean))
   process.exit(2);
 }
 const url = new URL(base);
+const expectedHost = process.env.ADMIN_STAGING_HOST;
+if (!expectedHost || url.hostname !== expectedHost || process.env.ADMIN_STAGING_CONFIRMED !== "yes") {
+  console.error("Explicit staging host match and ADMIN_STAGING_CONFIRMED=yes are required. Verify Firebase project isolation separately.");
+  process.exit(2);
+}
 if (url.username || url.password || url.pathname !== "/" || url.search || url.hash || ["motukadmin.vercel.app", "motuka.cd", "www.motuka.cd"].includes(url.hostname) || url.hostname.endsWith(".motuka.cd")) {
   console.error("Production targets are forbidden by this test script.");
   process.exit(2);
