@@ -146,7 +146,7 @@ export default function ProspectsPage() {
         ) : items.map(item => (
           <Box key={item.id} sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
             <Box sx={{ flex: 1, minWidth: 210 }}>
-              <Typography fontWeight={700}>Véhicule : {item.productId || "Non renseigné"}</Typography>
+              <Typography fontWeight={700}>Véhicule : {item.productName || item.productId || "Non renseigné"}</Typography>
               <Typography variant="body2" color="text.secondary">
                 Acheteur : {item.buyerId || "—"} · Commissionnaire : {item.commissionnaireId || "—"}
               </Typography>
