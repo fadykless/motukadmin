@@ -1,3 +1,4 @@
+import { cursorMatchesFilters } from "@/lib/server/prospect-cursor.mjs";
 import { validDate } from "@/lib/server/prospect-dates.mjs";
 import { adminDb, requireStaff, fail, HttpError } from "@/lib/server/admin";
 
@@ -41,12 +42,7 @@ export async function GET(request) {
     if (cursor) {
       const cursorDoc = await db.collection("contactRequests").doc(cursor).get();
       if (!cursorDoc.exists || !cursorDoc.get("createdAt")) throw new HttpError(400, "Curseur invalide");
-      const current = cursorDoc.data();
-      if (current.contactChannel !== "motuka" ||
-          (status && current.status !== status) ||
-          (commissionnaireId && current.commissionnaireId !== commissionnaireId) ||
-          (productId && current.productId !== productId) ||
-          (assignedTo && current.assignedTo !== assignedTo)) {
+      if (!cursorMatchesFilters(cursorDoc.data(), { status, commissionnaireId, productId, assignedTo, from, to })) {
         throw new HttpError(400, "Curseur incompatible avec les filtres");
       }
       query = query.startAfter(cursorDoc);
