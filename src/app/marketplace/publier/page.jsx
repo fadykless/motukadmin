@@ -455,7 +455,7 @@ const AddArticle = () => {
                             }}
                         >
                             <InputLabel>
-                                Type d'annonce
+                                Type d&apos;annonce
                             </InputLabel>
 
                             <Select
