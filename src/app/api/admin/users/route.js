@@ -1,9 +1,23 @@
 import { adminDb, requireStaff, fail, HttpError } from "@/lib/server/admin";
 export async function GET(request) {
   try {
-    await requireStaff(request);
+    const actor = await requireStaff(request);
     const snap = await adminDb().collection("users").limit(500).get();
-    return Response.json({ users: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) });
+    const users = snap.docs.map(doc => {
+      const user = doc.data();
+      return {
+        id: doc.id,
+        displayName: user.displayName || "",
+        email: user.email || "",
+        photoURL: user.photoURL || "",
+        city: user.city || "",
+        role: user.role || "user",
+        status: user.status || "active",
+        isPartner: user.isPartner === true,
+        ...(actor.role === "admin" ? { phoneNumber: user.phoneNumber || "" } : {}),
+      };
+    });
+    return Response.json({ users });
   } catch (error) { return fail(error); }
 }
 export async function PATCH(request) {
