@@ -19,8 +19,10 @@ export async function POST(request) {
     const name = requireString(displayName, "Nom", 150);
     const phone = requireString(phoneNumber, "Téléphone", 30);
     const location = requireString(city, "Ville", 100);
-    try { await adminAuth().getUser(id); }
+    let authAccount;
+    try { authAccount = await adminAuth().getUser(id); }
     catch (error) { if (error.code === "auth/user-not-found") throw new HttpError(404, "Compte Firebase Authentication introuvable"); throw error; }
+    if (authAccount.disabled) throw new HttpError(409, "Compte Firebase Authentication désactivé");
     const db = adminDb();
     const existing = await db.collection("partners").where("uid", "==", id).limit(2).get();
     if (!existing.empty) throw new HttpError(409, "Un profil commissionnaire est déjà associé à cet UID");
