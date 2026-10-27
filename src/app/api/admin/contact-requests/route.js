@@ -53,13 +53,16 @@ export async function GET(request) {
       const ids = [...new Set(snap.docs.map(doc => doc.get("productId")).filter(validId))];
       const products = ids.length ? await db.getAll(...ids.map(id => db.collection("products").doc(id))) : [];
       const byId = new Map(products.map(doc => [doc.id, doc.exists ? doc.data() : null]));
+      const partnerIds = [...new Set(snap.docs.map(doc => doc.get("commissionnaireId")).filter(validId))];
+      const partners = partnerIds.length ? await db.getAll(...partnerIds.map(id => db.collection("users").doc(id))) : [];
+      const activePartners = new Set(partners.filter(doc => doc.exists && doc.get("isPartner") === true).map(doc => doc.id));
       let inspected = 0;
       for (const doc of snap.docs) {
         inspected++;
         last = doc;
         const value = doc.data();
         const product = byId.get(value.productId);
-        if (!product || product.listingOrigin !== "commissionnaire" ||
+        if (!activePartners.has(value.commissionnaireId) || !product || product.listingOrigin !== "commissionnaire" ||
             product.commissionnaireId !== value.commissionnaireId) continue;
         items.push({
           id: doc.id,
