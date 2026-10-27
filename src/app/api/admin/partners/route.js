@@ -22,6 +22,7 @@ export async function POST(request) {
     await db.runTransaction(async tx => {
       const [user, partner] = await Promise.all([tx.get(userRef), tx.get(partnerRef)]);
       if (!user.exists) throw new HttpError(404, "Compte utilisateur introuvable");
+      if (["blocked", "disabled"].includes(user.data().status)) throw new HttpError(409, "Compte utilisateur désactivé");
       if (partner.exists) throw new HttpError(409, "Commissionnaire déjà enregistré");
       tx.create(partnerRef, { uid: id, displayName: requireString(displayName,"Nom",150), phoneNumber: requireString(phoneNumber,"Téléphone",30), city: requireString(city,"Ville",100), role: "partner", partnerType: "commissionnaire", status: "pending", createdAt: Date.now() });
       tx.update(userRef, { isPartner: false });
