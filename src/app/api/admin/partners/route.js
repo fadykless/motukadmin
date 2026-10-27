@@ -5,8 +5,17 @@ export async function GET(request) {
     const actor = await requireStaff(request);
     const snap = await adminDb().collection("users").where("isPartner", "==", true).limit(500).get();
     const partners = snap.docs.map(doc => {
-      const { phoneNumber, ...fields } = { id: doc.id, ...doc.data() };
-      return { ...fields, ...(actor.role === "admin" ? { phoneNumber } : {}), status: "active", partnerType: "commissionnaire" };
+      const user = doc.data();
+      return {
+        id: doc.id,
+        uid: doc.id,
+        displayName: user.displayName || "",
+        photoURL: user.photoURL || "",
+        city: user.city || "",
+        status: ["blocked", "disabled"].includes(user.status) ? "blocked" : "active",
+        partnerType: "commissionnaire",
+        ...(actor.role === "admin" ? { phoneNumber: user.phoneNumber || "" } : {}),
+      };
     });
     return Response.json({ partners });
   } catch (error) { return fail(error); }
