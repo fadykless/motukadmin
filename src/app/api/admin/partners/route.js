@@ -15,6 +15,8 @@ export async function POST(request) {
     try { await adminAuth().getUser(id); }
     catch (error) { if (error.code === "auth/user-not-found") throw new HttpError(404, "Compte Firebase Authentication introuvable"); throw error; }
     const db = adminDb();
+    const existing = await db.collection("partners").where("uid", "==", id).limit(2).get();
+    if (!existing.empty) throw new HttpError(409, "Un profil commissionnaire est déjà associé à cet UID");
     const userRef = db.collection("users").doc(id);
     const partnerRef = db.collection("partners").doc(id);
     await db.runTransaction(async tx => {
