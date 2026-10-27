@@ -237,7 +237,7 @@ export default function PartnersPage() {
         let active = true;
         adminApi("/api/admin/partners").then(({ partners }) => {
             if (active) setPartners(partners.filter(p => p.partnerType === "commissionnaire"));
-        }).catch(error => console.error("Partners API", error));
+        }).catch(error => { console.error("Partners API", error); if (active) setSnackbar({ open: true, severity: "error", message: error.message }); }).finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
     }, []);
 
