@@ -21,6 +21,14 @@ export async function requireStaff(request, allowed = ["admin", "manager"]) {
   let decoded;
   try { decoded = await adminAuth().verifyIdToken(header.slice(7), true); }
   catch { throw new HttpError(401, "Session invalide"); }
+  // Check the current Auth account state in addition to the ID token and Firestore role.
+  let account;
+  try { account = await adminAuth().getUser(decoded.uid); }
+  catch (error) {
+    if (error.code === "auth/user-not-found") throw new HttpError(401, "Compte introuvable");
+    throw error;
+  }
+  if (account.disabled) throw new HttpError(403, "Compte désactivé");
   const snap = await adminDb().collection("users").doc(decoded.uid).get();
   const user = snap.data();
   if (!user || user.status === "disabled" || user.status === "blocked" || !allowed.includes(user.role)) {
