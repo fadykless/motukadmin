@@ -1,9 +1,13 @@
 import { adminAuth, adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
 export async function GET(request) {
   try {
-    await requireStaff(request);
+    const actor = await requireStaff(request);
     const snap = await adminDb().collection("partners").limit(500).get();
-    return Response.json({ partners: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) });
+    const partners = snap.docs.map(doc => {
+      const { phoneNumber, ...publicFields } = { id: doc.id, ...doc.data() };
+      return actor.role === "admin" ? { ...publicFields, phoneNumber } : publicFields;
+    });
+    return Response.json({ partners });
   } catch (error) { return fail(error); }
 }
 export async function POST(request) {
