@@ -5,7 +5,7 @@ import {
     Grid,
     Typography,
 } from "@mui/material";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import React from "react";
 import { db } from "@/firebase";
 import ImageCarousel from "@/components/includes/ImageCarousel";
@@ -59,13 +59,7 @@ const SaleDetails = async ({ params }) => {
         }
     };
 
-    let viewsWeb = docSnap.exists() && typeof docSnap.data().viewsWeb === "number" ? docSnap.data().viewsWeb + 1 : 1;
-
-    if (docSnap.exists()) {
-        await updateDoc(docRef, { viewsWeb });
-    } else {
-        await setDoc(docRef, { viewsWeb }, { merge: true });
-    }
+    if (!product) return <Container>Annonce introuvable</Container>;
 
     return (
         <>
