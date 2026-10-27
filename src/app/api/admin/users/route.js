@@ -27,10 +27,13 @@ export async function PATCH(request) {
     if (typeof uid !== "string" || !["active", "blocked"].includes(status)) throw new HttpError(400, "Données invalides");
     if (uid === actor.uid) throw new HttpError(403, "Modification de votre propre statut interdite");
     if (!uid || uid.includes("/")) throw new HttpError(400, "UID invalide");
-    const ref = adminDb().collection("users").doc(uid);
-    const user = await ref.get();
-    if (!user.exists) throw new HttpError(404, "Utilisateur introuvable");
-    await ref.update(status === "blocked" ? { status, isPartner: false } : { status });
+    const db = adminDb();
+    await db.runTransaction(async tx => {
+      const ref = db.collection("users").doc(uid);
+      const user = await tx.get(ref);
+      if (!user.exists) throw new HttpError(404, "Utilisateur introuvable");
+      tx.update(ref, status === "blocked" ? { status, isPartner: false } : { status });
+    });
     return Response.json({ ok: true });
   } catch (error) { return fail(error); }
 }
