@@ -25,7 +25,6 @@ import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import { adminApi } from "@/lib/client/admin-api";
-import { db } from "@/firebase";
 
 const cities = [
     "Toutes les villes",
@@ -50,6 +49,10 @@ const statuses = [
         value: "active",
         label: "Actifs",
     },
+    {
+        value: "blocked",
+        label: "Comptes bloqués",
+    },
 ];
 
 const getInitials = (name = "") => {
@@ -73,12 +76,8 @@ const statusConfig = {
         label: "Actif",
         color: "success",
     },
-    pending: {
-        label: "En attente",
-        color: "warning",
-    },
-    suspended: {
-        label: "Suspendu",
+    blocked: {
+        label: "Compte bloqué",
         color: "error",
     },
 };
