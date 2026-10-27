@@ -21,6 +21,11 @@ export async function GET(request, { params }) {
     const snap = await db.collection("contactRequests").doc(prospectId).get();
     if (!snap.exists) throw new HttpError(404, "Prospect introuvable");
     const value = snap.data();
+    if (!value.productId || !value.commissionnaireId || !value.buyerId) throw new HttpError(404, "Prospect hors périmètre");
+    const product = await db.collection("products").doc(id(value.productId, "Véhicule")).get();
+    if (!product.exists || product.get("listingOrigin") !== "commissionnaire" ||
+        product.get("commissionnaireId") !== value.commissionnaireId ||
+        value.contactChannel !== "motuka") throw new HttpError(404, "Prospect hors périmètre");
     const history = await snap.ref.collection("history").orderBy("createdAt", "desc").limit(50).get();
     return Response.json({
       prospect: {
@@ -74,7 +79,7 @@ export async function PATCH(request, { params }) {
       const snap = await tx.get(ref);
       if (!snap.exists) throw new HttpError(404, "Prospect introuvable");
       const previous = snap.data();
-      if (!previous.productId || !previous.buyerId || !previous.commissionnaireId) throw new HttpError(409, "Références du prospect incomplètes");
+      if (previous.contactChannel !== "motuka" || !previous.productId || !previous.buyerId || !previous.commissionnaireId) throw new HttpError(409, "Références du prospect incomplètes");
       const [product, buyer, commissionnaire] = await Promise.all([
         tx.get(db.collection("products").doc(id(previous.productId, "Véhicule"))),
         tx.get(db.collection("users").doc(id(previous.buyerId, "Acheteur"))),
