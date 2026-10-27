@@ -1,4 +1,4 @@
-import { adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
+import { adminAuth, adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
 import { FieldValue } from "firebase-admin/firestore";
 
 export const runtime = "nodejs";
@@ -61,6 +61,13 @@ export async function PATCH(request, { params }) {
     if (body.assignedTo) {
       const assigned = await db.collection("users").doc(body.assignedTo).get();
       if (!assigned.exists || !["admin", "manager"].includes(assigned.data().role) || ["blocked", "disabled"].includes(assigned.data().status)) throw new HttpError(400, "Responsable non autorisé");
+      let account;
+      try { account = await adminAuth().getUser(body.assignedTo); }
+      catch (error) {
+        if (error.code === "auth/user-not-found") throw new HttpError(400, "Compte du responsable introuvable");
+        throw error;
+      }
+      if (account.disabled) throw new HttpError(400, "Compte du responsable désactivé");
     }
     const ref = db.collection("contactRequests").doc(prospectId);
     await db.runTransaction(async tx => {
