@@ -14,7 +14,7 @@ if (!base || !/^https:\/\//.test(base) || !Object.values(tokens).every(Boolean))
   process.exit(2);
 }
 const url = new URL(base);
-if (url.hostname === "motukadmin.vercel.app" || url.hostname === "motuka.cd" || url.hostname === "www.motuka.cd") {
+if (url.username || url.password || url.pathname !== "/" || url.search || url.hash || ["motukadmin.vercel.app", "motuka.cd", "www.motuka.cd"].includes(url.hostname) || url.hostname.endsWith(".motuka.cd")) {
   console.error("Production targets are forbidden by this test script.");
   process.exit(2);
 }
@@ -27,12 +27,20 @@ const cases = [
   { name: "User / partners", path: "/api/admin/partners", token: tokens.user, expected: 403 },
   { name: "Manager / partners", path: "/api/admin/partners", token: tokens.manager, expected: 200, hidePhone: true },
   { name: "Admin / partners", path: "/api/admin/partners", token: tokens.admin, expected: 200 },
+  { name: "User cannot update partner", path: "/api/admin/partners", method: "PATCH", token: tokens.user, body: { uid: "smoke-test", isPartner: true }, expected: 403 },
+  { name: "Manager cannot update partner", path: "/api/admin/partners", method: "PATCH", token: tokens.manager, body: { uid: "smoke-test", isPartner: true }, expected: 403 },
+  { name: "User cannot update user status", path: "/api/admin/users", method: "PATCH", token: tokens.user, body: { uid: "smoke-test", status: "blocked" }, expected: 403 },
+  { name: "Manager cannot update user status", path: "/api/admin/users", method: "PATCH", token: tokens.manager, body: { uid: "smoke-test", status: "blocked" }, expected: 403 },
+  { name: "User cannot update products", path: "/api/admin/products", method: "PATCH", token: tokens.user, body: { ids: ["smoke-test"], status: "hidden" }, expected: 403 },
+  { name: "Manager cannot archive products", path: "/api/admin/products", method: "DELETE", token: tokens.manager, body: { ids: ["smoke-test"] }, expected: 403 },
 ];
 let failures = 0;
 for (const test of cases) {
   try {
     const response = await fetch(new URL(test.path, url), {
-      headers: test.token ? { Authorization: `Bearer ${test.token}` } : {},
+      method: test.method || "GET",
+      headers: { ...(test.token ? { Authorization: `Bearer ${test.token}` } : {}), ...(test.body ? { "Content-Type": "application/json" } : {}) },
+      ...(test.body ? { body: JSON.stringify(test.body) } : {}),
       redirect: "error",
       signal: AbortSignal.timeout(15000),
     });
