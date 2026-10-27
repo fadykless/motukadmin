@@ -1,3 +1,4 @@
+import { eligibleProspect } from "@/lib/server/prospect-eligibility.mjs";
 import { cursorMatchesFilters } from "@/lib/server/prospect-cursor.mjs";
 import { validDate } from "@/lib/server/prospect-dates.mjs";
 import { adminDb, requireStaff, fail, HttpError } from "@/lib/server/admin";
@@ -59,15 +60,14 @@ export async function GET(request) {
       const byId = new Map(products.map(doc => [doc.id, doc.exists ? doc.data() : null]));
       const partnerIds = [...new Set(snap.docs.map(doc => doc.get("commissionnaireId")).filter(validId))];
       const partners = partnerIds.length ? await db.getAll(...partnerIds.map(id => db.collection("users").doc(id))) : [];
-      const activePartners = new Set(partners.filter(doc => doc.exists && doc.get("isPartner") === true).map(doc => doc.id));
+      const byPartner = new Map(partners.map(doc => [doc.id, doc.exists ? doc.data() : null]));
       let inspected = 0;
       for (const doc of snap.docs) {
         inspected++;
         last = doc;
         const value = doc.data();
         const product = byId.get(value.productId);
-        if (!activePartners.has(value.commissionnaireId) || !product || product.listingOrigin !== "commissionnaire" ||
-            product.commissionnaireId !== value.commissionnaireId) continue;
+        if (!eligibleProspect(value, product, byPartner.get(value.commissionnaireId))) continue;
         items.push({
           id: doc.id,
           productId: value.productId,
