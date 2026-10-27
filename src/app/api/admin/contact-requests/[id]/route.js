@@ -26,6 +26,8 @@ export async function GET(request, { params }) {
     if (!product.exists || product.get("listingOrigin") !== "commissionnaire" ||
         product.get("commissionnaireId") !== value.commissionnaireId ||
         value.contactChannel !== "motuka") throw new HttpError(404, "Prospect hors périmètre");
+    const partner = await db.collection("users").doc(id(value.commissionnaireId, "Commissionnaire")).get();
+    if (!partner.exists || partner.get("isPartner") !== true) throw new HttpError(404, "Prospect hors périmètre");
     const history = await snap.ref.collection("history").orderBy("createdAt", "desc").limit(50).get();
     return Response.json({
       prospect: {
