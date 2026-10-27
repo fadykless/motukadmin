@@ -46,62 +46,10 @@ const EditArticle = () => {
 
     const redirect = () => router.push("/annonces");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        const storage = getStorage();
-        const colRef = collection(db, "products");
-
-        try {
-            // Tableau pour stocker les promesses d'upload d'images
-            const imageUploadPromises = product.images.map((image) => {
-                return new Promise((resolve, reject) => {
-                    const uniqueImageName = `${new Date().getTime()}_${image.name}`; // Générer un nom unique
-                    const storageRef = ref(storage, "images/" + uniqueImageName);
-                    const metadata = { contentType: image.type };
-
-                    const uploadTask = uploadBytesResumable(storageRef, image, metadata);
-
-                    uploadTask.on(
-                        "state_changed",
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            console.log(`Upload is ${progress}% done for ${image.name}`);
-                        },
-                        (error) => {
-                            console.error(`Error uploading image ${image.name}:`, error);
-                            reject(error);
-                        },
-                        () => {
-                            // Récupérer l'URL après téléchargement
-                            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                                resolve(downloadURL);
-                            });
-                        }
-                    );
-                });
-            });
-
-            // Attendre que toutes les images soient uploadées
-            const imageURLs = await Promise.all(imageUploadPromises);
-
-            // Ajouter le document avec les URLs des images à Firestore
-            await addDoc(colRef, {
-                ...product,
-                images: imageURLs, // Stocker les URLs des images dans le document
-                createdAt: new Date().getTime(),
-                status: 'validated'
-            });
-
-            setLoading(false);
-            redirect()
-        } catch (err) {
-            setLoading(false);
-            console.log("Error adding product:", err);
-        }
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        window.alert("Modification désactivée temporairement : API sécurisée en préparation.");
     };
-
 
     return (
         <main>
