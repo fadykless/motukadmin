@@ -32,6 +32,7 @@ export async function PATCH(request) {
     await requireStaff(request, ["admin"]);
     const { uid, status } = await request.json();
     const id = requireString(uid,"UID",128);
+    if (id.includes("/")) throw new HttpError(400, "UID invalide");
     if (!["pending","active","suspended","disabled"].includes(status)) throw new HttpError(400,"Statut invalide");
     const db = adminDb(), userRef = db.collection("users").doc(id), partnerRef = db.collection("partners").doc(id);
     await db.runTransaction(async tx => {
