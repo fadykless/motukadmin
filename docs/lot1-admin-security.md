@@ -35,3 +35,10 @@ Toutes les routes exigent un Firebase ID token dans `Authorization: Bearer ...`,
 
 ## Livraison
 Aucun merge vers `main`, aucune migration destructive, aucun déploiement ni activation commerciale dans ce lot sans validation explicite.
+
+## Résultat CI — 27 octobre 2026
+- GitHub Actions, exécution [40535060979](https://github.com/fadykless/motukadmin/actions/runs/40535060979) : **échec confirmé** sur `npm ci --ignore-scripts --no-audit --no-fund`.
+- Le journal signale des dépendances absentes du verrou (`http-proxy-agent`, `gcp-metadata`, `@grpc/proto-loader`, etc.) et des versions incompatibles (`protobufjs`, `hasown`).
+- ESLint et build ont été ignorés car l'installation a échoué ; aucune conclusion sur leur réussite.
+- **Correction requise sur la branche :** avec Node.js 22 et npm, exécuter `npm install --package-lock-only --ignore-scripts --no-audit --no-fund`, committer le `package-lock.json` régénéré, puis relancer le workflow et vérifier `npm ci`, lint et build.
+- Ne pas contourner le contrôle en remplaçant durablement `npm ci` par `npm install` dans la CI. Ne pas fusionner/déployer tant que ces étapes échouent.
