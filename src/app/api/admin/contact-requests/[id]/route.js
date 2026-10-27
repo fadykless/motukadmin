@@ -101,7 +101,7 @@ export async function PATCH(request, { params }) {
         tx.get(db.collection("users").doc(id(previous.commissionnaireId, "Commissionnaire")))
       ]);
       if (!product.exists || !buyer.exists || !commissionnaire.exists) throw new HttpError(409, "Référence du prospect introuvable");
-      if (product.data().listingOrigin !== "commissionnaire" || product.data().commissionnaireId !== previous.commissionnaireId) throw new HttpError(409, "Prospect hors périmètre commissionnaire");
+      if (commissionnaire.get("isPartner") !== true || product.data().listingOrigin !== "commissionnaire" || product.data().commissionnaireId !== previous.commissionnaireId) throw new HttpError(409, "Prospect hors périmètre commissionnaire");
       const status = body.status ?? previous.status ?? "new";
       const reason = status === "closed" ? (body.closedReason ?? previous.closedReason) : null;
       const comment = status === "closed" ? (body.closedComment ?? previous.closedComment ?? null) : null;
