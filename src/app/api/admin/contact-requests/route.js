@@ -53,7 +53,9 @@ export async function GET(request) {
       const ids = [...new Set(snap.docs.map(doc => doc.get("productId")).filter(validId))];
       const products = ids.length ? await db.getAll(...ids.map(id => db.collection("products").doc(id))) : [];
       const byId = new Map(products.map(doc => [doc.id, doc.exists ? doc.data() : null]));
+      let inspected = 0;
       for (const doc of snap.docs) {
+        inspected++;
         last = doc;
         const value = doc.data();
         const product = byId.get(value.productId);
@@ -71,7 +73,7 @@ export async function GET(request) {
         });
         if (items.length === limit) break;
       }
-      if (snap.size < 50) { exhausted = true; break; }
+      if (snap.size < 50 && inspected === snap.size) { exhausted = true; break; }
       query = query.startAfter(last);
     }
     return Response.json({ items, nextCursor: exhausted || !last ? null : last.id });
