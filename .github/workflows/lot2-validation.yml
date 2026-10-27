@@ -1,0 +1,22 @@
+name: Motuka Admin - validation Lot 2
+on:
+  push:
+    branches: [feature/admin-contact-requests]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run build
+        env:
+          CI: 'true'
