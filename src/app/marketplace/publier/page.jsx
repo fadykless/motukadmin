@@ -123,7 +123,7 @@ const AddArticle = () => {
             ...prev,
             partner: partnerId,
             partnerName: partner.name || "",
-            phoneNumber: partner.phoneNumber || "",
+            phoneNumber: "", // Les coordonnées du commissionnaire ne sont pas des données publiques.
             city: partner.city || "",
         }));
     };
