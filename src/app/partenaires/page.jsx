@@ -23,7 +23,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
-import { collection, onSnapshot } from "firebase/firestore";
+import { adminApi } from "@/lib/client/admin-api";
 import { db } from "@/firebase";
 
 const cities = [
@@ -234,40 +234,11 @@ export default function PartnersPage() {
     });
 
     useEffect(() => {
-        const usersRef = collection(db, "partners");
-
-        const unsubscribe = onSnapshot(
-            usersRef,
-            (snapshot) => {
-                const data = snapshot.docs
-                    .map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }))
-                    .filter(
-                        (user) =>
-                            user.role === "partner" &&
-                            user.partnerType === "commissionnaire"
-                    );
-
-                setPartners(data);
-                setLoading(false);
-            },
-            (error) => {
-                console.error(error);
-
-                setSnackbar({
-                    open: true,
-                    message:
-                        "Impossible de récupérer les partenaires.",
-                    severity: "error",
-                });
-
-                setLoading(false);
-            }
-        );
-
-        return unsubscribe;
+        let active = true;
+        adminApi("/api/admin/partners").then(({ partners }) => {
+            if (active) setPartners(partners.filter(p => p.partnerType === "commissionnaire"));
+        }).catch(error => console.error("Partners API", error));
+        return () => { active = false; };
     }, []);
 
     const filteredPartners = useMemo(() => {
