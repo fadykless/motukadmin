@@ -1,4 +1,4 @@
-import { adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
+import { adminAuth, adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
 export async function GET(request) {
   try {
     await requireStaff(request);
@@ -11,6 +11,9 @@ export async function POST(request) {
     await requireStaff(request, ["admin"]);
     const { uid, displayName, phoneNumber, city } = await request.json();
     const id = requireString(uid, "UID", 128);
+    if (id.includes("/")) throw new HttpError(400, "UID invalide");
+    try { await adminAuth().getUser(id); }
+    catch (error) { if (error.code === "auth/user-not-found") throw new HttpError(404, "Compte Firebase Authentication introuvable"); throw error; }
     const db = adminDb();
     const userRef = db.collection("users").doc(id);
     const partnerRef = db.collection("partners").doc(id);
