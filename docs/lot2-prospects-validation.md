@@ -28,16 +28,24 @@ Les combinaisons de filtres `status`, `commissionnaireId`, `productId`, `assigne
 6. Rejet des champs `productId`, `buyerId`, `commissionnaireId` dans PATCH.
 7. Contrôle des informations personnelles.
 8. Vérification des règles Firestore et non-régression du Lot 1.
-9. `npm run lint` et `npm run build`.
+9. `npm run lint` et `npm run build` — réussis dans GitHub Actions sur `ca07258` (runs 40574918776 et 40574934311).
+
+## État vérifié au 27 octobre 2026
+- PR #2 ouverte en brouillon, sans fusion ni déploiement.
+- L'API liste vérifie l'origine commissionnaire et la correspondance avec le partenaire sur chaque véhicule chargé.
+- L'API détail vérifie le canal Motuka et l'origine commissionnaire du véhicule ; les modifications sont également limitées au canal Motuka.
+- La liste expose un nom de véhicule lorsqu'il est renseigné dans `products.name`.
+- L'affectation utilise une liste de responsables ; la modification vérifie leur compte Firebase Authentication.
+- Les réponses d'historique sont limitées à des champs d'audit explicitement autorisés.
+- Les contrôles automatiques sont réussis, mais les tests Firebase et la vérification des index ne sont pas réalisés.
 
 ## Limites connues
-- La liste n'effectue pas encore de vérification de l'origine commissionnaire de chaque annonce référencée ; la vérification existe sur la modification.
-- Les noms, coordonnées et détails lisibles des véhicules ne sont pas encore enrichis dans les réponses.
-- L'affectation se fait actuellement par UID et non par sélection d'un agent.
-- L'historique est limité aux 50 événements les plus récents en lecture.
-- La vérification des comptes Firebase Authentication des responsables affectés reste à ajouter.
+- La pagination post-filtrée lit au maximum dix lots de 50 documents par appel ; elle peut retourner une page partielle avant la fin du catalogue.
+- Les curseurs ne sont pas liés cryptographiquement aux filtres ; leur comportement doit être testé lors d'un changement de filtre ou de données.
+- L'historique est limité aux 50 événements les plus récents.
+- Les coordonnées et identités lisibles des acheteurs et partenaires ne sont pas enrichies.
 - La compatibilité avec les données réellement créées par la marketplace doit être testée.
-- La connexion du bouton public et les visiteurs anonymes sont hors périmètre.
+- Le raccordement au site public et les visiteurs anonymes sont hors périmètre.
 - Aucun test fonctionnel Firebase ni test de production n'a été réalisé.
 
 Ces limites doivent être résolues ou acceptées explicitement avant validation finale.
