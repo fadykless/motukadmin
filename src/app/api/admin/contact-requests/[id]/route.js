@@ -67,6 +67,14 @@ export async function PATCH(request, { params }) {
       const snap = await tx.get(ref);
       if (!snap.exists) throw new HttpError(404, "Prospect introuvable");
       const previous = snap.data();
+      if (!previous.productId || !previous.buyerId || !previous.commissionnaireId) throw new HttpError(409, "Références du prospect incomplètes");
+      const [product, buyer, commissionnaire] = await Promise.all([
+        tx.get(db.collection("products").doc(id(previous.productId, "Véhicule"))),
+        tx.get(db.collection("users").doc(id(previous.buyerId, "Acheteur"))),
+        tx.get(db.collection("users").doc(id(previous.commissionnaireId, "Commissionnaire")))
+      ]);
+      if (!product.exists || !buyer.exists || !commissionnaire.exists) throw new HttpError(409, "Référence du prospect introuvable");
+      if (product.data().listingOrigin !== "commissionnaire" || product.data().commissionnaireId !== previous.commissionnaireId) throw new HttpError(409, "Prospect hors périmètre commissionnaire");
       const status = body.status ?? previous.status ?? "new";
       const reason = status === "closed" ? (body.closedReason ?? previous.closedReason) : null;
       const comment = status === "closed" ? (body.closedComment ?? previous.closedComment ?? null) : null;
