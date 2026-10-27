@@ -2,18 +2,8 @@ import { adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/ser
 const STATUSES = ["init", "validated", "hidden", "sold"];
 export async function POST(request) {
   try {
-    const actor = await requireStaff(request);
-    const body = await request.json();
-    const name = requireString(body.name, "Nom", 200);
-    const price = Number(body.price);
-    if (!Number.isFinite(price) || price < 0) throw new HttpError(400, "Prix invalide");
-    if (!Array.isArray(body.images) || body.images.length < 1 || body.images.length > 20 || !body.images.every(x => typeof x === "string" && x.startsWith("https://"))) throw new HttpError(400, "Images invalides");
-    const allowed = ["name","price","description","etat","city","brand","model","year","mileage","engineType","fuel","transmission","rentType","rentPrice","images","alsoForRent","type"];
-    const data = Object.fromEntries(allowed.filter(key => Object.hasOwn(body, key)).map(key => [key, body[key]]));
-    data.name = name; data.price = price;
-    if (body.partner) throw new HttpError(409, "Publication commissionnaire à finaliser après liaison UID et consentement");
-    const ref = await adminDb().collection("products").add({ ...data, listingOrigin: "direct", contactChannel: "seller", status: "validated", createdAt: Date.now(), createdByAdmin: actor.uid });
-    return Response.json({ id: ref.id }, { status: 201 });
+    await requireStaff(request);
+    throw new HttpError(409, "Publication administrative temporairement indisponible : validation du propriétaire, consentement et stockage privé nécessaires");
   } catch (error) { return fail(error); }
 }
 export async function PATCH(request) {
