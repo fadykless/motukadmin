@@ -17,7 +17,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node --check scripts/test-prospects-access.mjs
-      - run: node --test scripts/test-prospects-dates.mjs scripts/test-prospects-closure.mjs scripts/test-prospects-cursor.mjs
+      - run: node --test scripts/test-prospects-dates.mjs scripts/test-prospects-closure.mjs scripts/test-prospects-cursor.mjs scripts/test-prospects-eligibility.mjs
       - run: npm run lint
       - run: npm run build
         env:
