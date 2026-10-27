@@ -62,6 +62,7 @@ export async function PATCH(request) {
       const user = await tx.get(ref);
       if (!user.exists) throw new HttpError(404, "Utilisateur introuvable");
       if (isPartner && ["blocked", "disabled"].includes(user.data().status)) throw new HttpError(409, "Compte utilisateur désactivé");
+      if (user.data().isPartner === isPartner) throw new HttpError(409, "Statut commissionnaire déjà défini");
       tx.update(ref, { isPartner, partnerUpdatedAt: Date.now() });
     });
     return Response.json({ ok: true, uid: id, isPartner });
