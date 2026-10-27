@@ -122,7 +122,7 @@ const AddArticle = () => {
         setProduct((prev) => ({
             ...prev,
             partner: partnerId,
-            partnerName: partner.name || "",
+            partnerName: partner.displayName || "",
             phoneNumber: "", // Les coordonnées du commissionnaire ne sont pas des données publiques.
             city: partner.city || "",
         }));
