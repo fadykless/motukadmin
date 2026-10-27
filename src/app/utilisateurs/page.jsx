@@ -88,8 +88,9 @@ const Users = () => {
 
 
             await adminApi("/api/admin/users", { method: "PATCH", body: JSON.stringify({ uid: selectedUser.id, status }) });
-            setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status } : u));
-            setData(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status } : u));
+            const applyStatus = u => u.id === selectedUser.id ? { ...u, status, ...(status === "blocked" ? { isPartner: false } : {}) } : u;
+            setUsers(prev => prev.map(applyStatus));
+            setData(prev => prev.map(applyStatus));
 
 
 
