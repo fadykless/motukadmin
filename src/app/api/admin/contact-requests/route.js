@@ -30,7 +30,7 @@ export async function GET(request) {
     if (from && to && from > to) throw new HttpError(400, "Période invalide");
 
     const db = adminDb();
-    let query = db.collection("contactRequests");
+    let query = db.collection("contactRequests").where("contactChannel", "==", "motuka");
     if (status) query = query.where("status", "==", status);
     if (commissionnaireId) query = query.where("commissionnaireId", "==", commissionnaireId);
     if (productId) query = query.where("productId", "==", productId);
@@ -46,8 +46,22 @@ export async function GET(request) {
 
     const result = await query.limit(limit + 1).get();
     const docs = result.docs.slice(0, limit);
+    const productIds = [...new Set(docs.map(doc => doc.get("productId")).filter(validId))];
+    const productSnaps = productIds.length
+      ? await db.getAll(...productIds.map(productId => db.collection("products").doc(productId)))
+      : [];
+    const commissionnaireProducts = new Map(productSnaps.map(snap => [
+      snap.id,
+      snap.exists && snap.get("listingOrigin") === "commissionnaire"
+        ? snap.get("commissionnaireId") : null
+    ]));
     return Response.json({
-      items: docs.map(doc => {
+      items: docs.filter(doc => {
+        const value = doc.data();
+        return validId(value.productId) &&
+          validId(value.commissionnaireId) &&
+          commissionnaireProducts.get(value.productId) === value.commissionnaireId;
+      }).map(doc => {
         const value = doc.data();
         return {
           id: doc.id,
