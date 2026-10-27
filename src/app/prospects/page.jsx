@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert, Box, Button, Chip, CircularProgress, Container, FormControl,
   InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography
@@ -18,6 +18,7 @@ const reasons = [
 ];
 
 export default function ProspectsPage() {
+  const detailRequest = useRef(0);
   const [filters, setFilters] = useState({
     status: "", productId: "", commissionnaireId: "", assignedTo: "", from: "", to: ""
   });
@@ -62,11 +63,13 @@ export default function ProspectsPage() {
   }, []);
 
   const openDetail = async (id) => {
+    const requestNumber = ++detailRequest.current;
     setError("");
     setSelected(id);
     setDetail(null);
     try {
       const result = await adminApi("/api/admin/contact-requests/" + encodeURIComponent(id));
+      if (requestNumber !== detailRequest.current) return;
       setDetail(result);
       setEdit({
         status: result.prospect.status,
@@ -74,7 +77,7 @@ export default function ProspectsPage() {
         closedReason: result.prospect.closedReason || "",
         closedComment: result.prospect.closedComment || ""
       });
-    } catch (err) { setError(err.message); }
+    } catch (err) { if (requestNumber === detailRequest.current) setError(err.message); }
   };
 
   const save = async () => {
@@ -173,7 +176,7 @@ export default function ProspectsPage() {
       {selected && <Paper sx={{ p: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
           <Typography variant="h6">Détail du prospect</Typography>
-          <Button onClick={() => { setSelected(null); setDetail(null); }}>Fermer</Button>
+          <Button onClick={() => { detailRequest.current++; setSelected(null); setDetail(null); }}>Fermer</Button>
         </Stack>
         {!detail ? <CircularProgress size={26} /> : <>
           <Typography variant="body2" sx={{ mb: 2 }}>
