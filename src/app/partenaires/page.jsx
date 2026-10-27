@@ -7,6 +7,7 @@ import {
     Box,
     Chip,
     Container,
+    Button,
     Fab,
     FormControl,
     Grid,
@@ -90,7 +91,7 @@ const statusConfig = {
     },
 };
 
-const PartnerCard = ({ partner }) => {
+const PartnerCard = ({ partner, onRevoke, busy }) => {
     const status = statusConfig[partner.status] || {
         label: "Inconnu",
         color: "default",
@@ -215,6 +216,9 @@ const PartnerCard = ({ partner }) => {
                         </Typography>
                     </Box>
                 </Box>
+                <Button color="error" size="small" sx={{ mt: 2 }} disabled={busy} onClick={() => onRevoke(partner)}>
+                    Retirer le statut commissionnaire
+                </Button>
             </Box>
         </Grid>
     );
@@ -226,6 +230,7 @@ export default function PartnersPage() {
     const [city, setCity] = useState("Toutes les villes");
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
+    const [busyId, setBusyId] = useState(null);
 
     const [snackbar, setSnackbar] = useState({
         open: false,
@@ -240,6 +245,18 @@ export default function PartnersPage() {
         }).catch(error => { console.error("Partners API", error); if (active) setSnackbar({ open: true, severity: "error", message: error.message }); }).finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
     }, []);
+
+    const revokePartner = async (partner) => {
+        if (!window.confirm(`Retirer le statut commissionnaire de ${partner.displayName || partner.id} ?`)) return;
+        setBusyId(partner.id);
+        try {
+            await adminApi("/api/admin/partners", { method: "PATCH", body: JSON.stringify({ uid: partner.id, isPartner: false }) });
+            setPartners(previous => previous.filter(item => item.id !== partner.id));
+            setSnackbar({ open: true, severity: "success", message: "Statut commissionnaire retiré." });
+        } catch (error) {
+            setSnackbar({ open: true, severity: "error", message: error.message });
+        } finally { setBusyId(null); }
+    };
 
     const filteredPartners = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -459,6 +476,8 @@ export default function PartnersPage() {
                         <PartnerCard
                             key={partner.id}
                             partner={partner}
+                            onRevoke={revokePartner}
+                            busy={busyId === partner.id}
                         />
                     ))}
                 </Grid>
