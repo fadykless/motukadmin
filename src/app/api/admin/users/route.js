@@ -12,9 +12,24 @@ export async function PATCH(request) {
     const { uid, status } = await request.json();
     if (typeof uid !== "string" || !["active", "blocked"].includes(status)) throw new HttpError(400, "Données invalides");
     if (uid === actor.uid) throw new HttpError(403, "Modification de votre propre statut interdite");
-    const ref = adminDb().collection("users").doc(uid);
-    if (!(await ref.get()).exists) throw new HttpError(404, "Utilisateur introuvable");
-    await ref.update({ status });
+    if (!uid || uid.includes("/")) throw new HttpError(400, "UID invalide");
+    const db = adminDb();
+    await db.runTransaction(async tx => {
+      const userRef = db.collection("users").doc(uid);
+      const partnerRef = db.collection("partners").doc(uid);
+      const [user, partner] = await Promise.all([tx.get(userRef), tx.get(partnerRef)]);
+      if (!user.exists) throw new HttpError(404, "Utilisateur introuvable");
+      if (status === "blocked") {
+        tx.update(userRef, { status, isPartner: false });
+        if (partner.exists) {
+          if (partner.data().uid !== uid) throw new HttpError(409, "Association commissionnaire incohérente");
+          tx.update(partnerRef, { status: "suspended", updatedAt: Date.now() });
+        }
+      } else {
+        // Un déblocage ne réactive jamais automatiquement le statut commissionnaire.
+        tx.update(userRef, { status, isPartner: false });
+      }
+    });
     return Response.json({ ok: true });
   } catch (error) { return fail(error); }
 }
