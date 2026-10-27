@@ -37,7 +37,7 @@
 | Régression Lot 1 | Utilisateurs, partenaires et annonces fonctionnent toujours |
 
 ## Exécution
-Contrôles locaux sans Firebase : `node --test scripts/test-prospects-*.mjs` (ne pas inclure le script d'accès, qui exige des jetons).
+Contrôles locaux sans Firebase : `node --test scripts/test-prospects-dates.mjs scripts/test-prospects-closure.mjs scripts/test-prospects-cursor.mjs`. Ne pas inclure le script de tests d’accès, qui exige des jetons de préproduction.
 
 Tests d'accès HTTP en lecture seule, uniquement après déploiement isolé et confirmation de l'hôte :
 
