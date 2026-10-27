@@ -31,6 +31,7 @@ export default function ProspectsPage() {
   const [edit, setEdit] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [staff, setStaff] = useState([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -52,6 +53,13 @@ export default function ProspectsPage() {
   }, [filters, cursor]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    adminApi("/api/admin/contact-requests/staff").then(result => {
+      if (active) setStaff(result.staff || []);
+    }).catch(err => { if (active) setError(err.message); });
+    return () => { active = false; };
+  }, []);
 
   const openDetail = async (id) => {
     setError("");
@@ -179,8 +187,18 @@ export default function ProspectsPage() {
                 {statuses.filter(([value]) => value).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
               </Select>
             </FormControl>
-            <TextField label="UID du responsable (admin/manager)" value={edit.assignedTo || ""}
-              onChange={e => setEdit(p => ({ ...p, assignedTo: e.target.value }))} helperText="Laisser vide pour retirer l'affectation" />
+            <FormControl fullWidth>
+              <InputLabel>Responsable Motuka</InputLabel>
+              <Select label="Responsable Motuka" value={edit.assignedTo || ""}
+                onChange={e => setEdit(p => ({ ...p, assignedTo: e.target.value }))}>
+                <MenuItem value="">Non affecté</MenuItem>
+                {edit.assignedTo && !staff.some(person => person.uid === edit.assignedTo) &&
+                  <MenuItem value={edit.assignedTo}>Responsable actuel ({edit.assignedTo})</MenuItem>}
+                {staff.map(person => <MenuItem key={person.uid} value={person.uid}>
+                  {person.displayName} ({person.role})
+                </MenuItem>)}
+              </Select>
+            </FormControl>
             {edit.status === "closed" && <>
               <FormControl fullWidth>
                 <InputLabel>Motif de clôture</InputLabel>
