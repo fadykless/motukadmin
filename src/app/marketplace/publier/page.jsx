@@ -76,28 +76,13 @@ const AddArticle = () => {
     */
 
     useEffect(() => {
-        const unsubscribe = onSnapshot(
-            collection(db, "partners"),
-            (snapshot) => {
-                const data = snapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
-
-                setPartners(data);
-            },
-            (error) => {
-                console.error(error);
-                toast.error(
-                    "Impossible de charger les partenaires"
-                );
-            }
-        );
-
-        return unsubscribe;
+        let active = true;
+        adminApi("/api/admin/partners").then(({ partners }) => {
+            if (active) setPartners(partners.filter(p => p.status === "active"));
+        }).catch(error => toast.error(error.message));
+        return () => { active = false; };
     }, []);
 
-    console.log(partners)
 
     /*
     =========================
