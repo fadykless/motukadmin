@@ -39,11 +39,26 @@ export async function GET(request, { params }) {
         closedComment: value.closedComment || null,
         createdAt: value.createdAt?.toDate?.()?.toISOString() || null
       },
-      history: history.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null
-      }))
+      history: history.docs.map(doc => {
+        const event = doc.data();
+        return {
+          id: doc.id,
+          prospectId: snap.id,
+          action: event.action || null,
+          actorId: event.actorId || null,
+          before: {
+            status: event.before?.status || null,
+            assignedTo: event.before?.assignedTo || null,
+            closedReason: event.before?.closedReason || null
+          },
+          after: {
+            status: event.after?.status || null,
+            assignedTo: event.after?.assignedTo || null,
+            closedReason: event.after?.closedReason || null
+          },
+          createdAt: event.createdAt?.toDate?.()?.toISOString() || null
+        };
+      })
     });
   } catch (error) { return fail(error); }
 }
