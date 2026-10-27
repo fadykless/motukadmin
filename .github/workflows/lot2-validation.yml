@@ -16,6 +16,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --check scripts/test-prospects-access.mjs
       - run: npm run lint
       - run: npm run build
         env:
