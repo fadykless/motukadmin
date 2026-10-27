@@ -26,8 +26,6 @@ jobs:
           cache: npm
       - name: Regenerate lockfile from package.json
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Verify clean installation
-        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Commit lockfile only if changed
         run: |
           if git diff --quiet -- package-lock.json; then
@@ -39,6 +37,8 @@ jobs:
           git add package-lock.json
           git commit -m "build: synchronize npm lockfile for admin SDK"
           git push origin HEAD:feature/admin-security-partners
+      - name: Verify clean installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Lint
         run: npm run lint
       - name: Build
