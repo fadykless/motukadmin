@@ -35,6 +35,7 @@ export async function PATCH(request) {
       const [user, partner] = await Promise.all([tx.get(userRef), tx.get(partnerRef)]);
       if (!user.exists || !partner.exists) throw new HttpError(404,"Compte ou commissionnaire introuvable");
       if (partner.data().uid !== id) throw new HttpError(409,"Association UID incohérente");
+      if (status === "active" && (user.data().status === "blocked" || user.data().status === "disabled")) throw new HttpError(409, "Compte utilisateur désactivé");
       tx.update(partnerRef, { status, updatedAt: Date.now() });
       tx.update(userRef, { isPartner: status === "active" });
     });
