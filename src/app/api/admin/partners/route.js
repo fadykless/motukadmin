@@ -41,6 +41,12 @@ export async function PATCH(request) {
     const id = requireString(uid,"UID",128);
     if (id.includes("/")) throw new HttpError(400, "UID invalide");
     if (!["pending","active","suspended","disabled"].includes(status)) throw new HttpError(400,"Statut invalide");
+    if (status === "active") {
+      let account;
+      try { account = await adminAuth().getUser(id); }
+      catch (error) { if (error.code === "auth/user-not-found") throw new HttpError(404, "Compte Firebase Authentication introuvable"); throw error; }
+      if (account.disabled) throw new HttpError(409, "Compte Firebase Authentication désactivé");
+    }
     const db = adminDb(), userRef = db.collection("users").doc(id), partnerRef = db.collection("partners").doc(id);
     await db.runTransaction(async tx => {
       const [user, partner] = await Promise.all([tx.get(userRef), tx.get(partnerRef)]);
