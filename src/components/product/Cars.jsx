@@ -382,7 +382,7 @@ const Cars = ({
 
         {data.status !== "validated" && (
           <MenuItem onClick={validateProduct}>
-            <CheckCircleOutline sx={{ mr: 1 }} />
+            <CheckCircleOutlineIcon sx={{ mr: 1 }} />
             Valider
           </MenuItem>
         )}

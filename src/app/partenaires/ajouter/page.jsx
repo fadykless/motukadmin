@@ -1,254 +1,69 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Container,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Snackbar,
-    TextField,
-    Typography,
-} from "@mui/material";
-import { addDoc, collection } from "firebase/firestore";
-import { db } from "@/firebase";
-import { LoadingButton } from "@mui/lab";
-
-const cities = [
-    "Kinshasa",
-    "Lubumbashi",
-    "Goma",
-    "Kolwezi",
-    "Matadi",
-    "Bukavu",
-    "Kananga",
-    "Mbuji-Mayi",
-    "Kisangani",
-    "Autre",
-];
-
-const normalizePhone = (phone) => {
-    let number = phone.replace(/\D/g, "");
-
-    // Si le numéro commence par 0 : 0812345678 → 812345678
-    number = number.replace(/^0+/, "");
-
-    return `+243${number}`;
-};
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Autocomplete, Box, Button, Card, CardContent, CircularProgress, Container, Snackbar, TextField, Typography } from "@mui/material";
+import { adminApi } from "@/lib/client/admin-api";
 
 export default function AddPartner() {
-    const [form, setForm] = useState({
-        name: "",
-        phone: "",
-        city: "",
-    });
+  const [users, setUsers] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ open: false, severity: "success", text: "" });
 
-    const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    let active = true;
+    adminApi("/api/admin/users")
+      .then(usersResponse => {
+        if (!active) return;
+        setUsers(usersResponse.users || []);
+      })
+      .catch(error => { if (active) setMessage({ open: true, severity: "error", text: error.message }); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-    const [snackbar, setSnackbar] = useState({
-        open: false,
-        message: "",
-        severity: "success",
-    });
+  const candidates = useMemo(() => {
+    return users.filter(user => user.id && !user.isPartner && !["blocked", "disabled"].includes(user.status));
+  }, [users]);
 
-    const handleChange = (field, value) => {
-        setForm((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
+  const assign = async () => {
+    if (!selected?.id) return;
+    setSaving(true);
+    try {
+      await adminApi("/api/admin/partners", { method: "POST", body: JSON.stringify({ uid: selected.id }) });
+      setUsers(prev => prev.map(user => user.id === selected.id ? { ...user, isPartner: true } : user));
+      setSelected(null);
+      setMessage({ open: true, severity: "success", text: "Utilisateur assigné comme commissionnaire." });
+    } catch (error) {
+      setMessage({ open: true, severity: "error", text: error.message });
+    } finally { setSaving(false); }
+  };
 
-    const showMessage = (message, severity = "success") => {
-        setSnackbar({
-            open: true,
-            message,
-            severity,
-        });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!form.name.trim()) {
-            showMessage("Veuillez entrer le nom du commissionnaire.", "error");
-            return;
-        }
-
-        if (!form.phone.trim()) {
-            showMessage("Veuillez entrer le numéro de téléphone.", "error");
-            return;
-        }
-
-        if (!form.city) {
-            showMessage("Veuillez sélectionner une ville.", "error");
-            return;
-        }
-
-        const phoneNumber = normalizePhone(form.phone);
-
-        if (phoneNumber.length < 12) {
-            showMessage("Veuillez entrer un numéro de téléphone valide.", "error");
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            await addDoc(collection(db, "partners"), {
-                displayName: form.name.trim(),
-                phoneNumber,
-                city: form.city,
-                role: "partner",
-                partnerType: "commissionnaire",
-                status: "active",
-                createdAt: Date.now(),
-            });
-
-            showMessage("Commissionnaire ajouté avec succès.");
-
-            setForm({
-                name: "",
-                phone: "",
-                city: "",
-            });
-        } catch (error) {
-            console.error(error);
-
-            showMessage(
-                "Impossible d'ajouter le commissionnaire.",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <Container maxWidth="md" sx={{ py: 5 }}>
-            <Box sx={{ mb: 4 }}>
-                <Typography color="text.primary" variant="h4" sx={{ fontWeight: 700 }}>
-                    Ajouter un commissionnaire
-                </Typography>
-
-                <Typography color="text.secondary" sx={{ mt: 1 }}>
-                    Ajoutez un commissionnaire au réseau de partenaires Motuka.
-                </Typography>
-            </Box>
-
-            <Card
-                elevation={0}
-                sx={{
-                    borderRadius: 4,
-                    border: "1px solid",
-                    borderColor: "divider",
-                }}
-            >
-                <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                    <form onSubmit={handleSubmit}>
-                        <TextField
-                            label="Nom complet"
-                            value={form.name}
-                            fullWidth
-                            required
-                            onChange={(e) =>
-                                handleChange("name", e.target.value)
-                            }
-                            sx={{ mb: 3 }}
-                        />
-
-                        <Box
-                            sx={{
-                                display: "flex",
-                                gap: 1,
-                                mb: 3,
-                            }}
-                        >
-                            <TextField
-                                label="Pays"
-                                value="+243"
-                                disabled
-                                sx={{
-                                    width: 100,
-                                    flexShrink: 0,
-                                }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                label="Numéro de téléphone"
-                                placeholder="081 234 56 78"
-                                value={form.phone}
-                                required
-                                type="tel"
-                                onChange={(e) =>
-                                    handleChange("phone", e.target.value)
-                                }
-                            />
-                        </Box>
-
-                        <FormControl
-                            fullWidth
-                            required
-                            sx={{ mb: 4 }}
-                        >
-                            <InputLabel>Ville</InputLabel>
-
-                            <Select
-                                value={form.city}
-                                label="Ville"
-                                onChange={(e) =>
-                                    handleChange("city", e.target.value)
-                                }
-                            >
-                                {cities.map((city) => (
-                                    <MenuItem key={city} value={city}>
-                                        {city}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <LoadingButton
-                            type="submit"
-                            variant="contained"
-                            loading={loading}
-                            fullWidth
-                        >
-                            Ajouter le commissionnaire
-                        </LoadingButton>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() =>
-                    setSnackbar((prev) => ({
-                        ...prev,
-                        open: false,
-                    }))
-                }
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    variant="filled"
-                    onClose={() =>
-                        setSnackbar((prev) => ({
-                            ...prev,
-                            open: false,
-                        }))
-                    }
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </Container>
-    );
+  return (
+    <Container maxWidth="md" sx={{ py: 5 }}>
+      <Typography variant="h4" fontWeight={700} mb={1}>Assigner un commissionnaire</Typography>
+      <Typography color="text.secondary" mb={3}>Sélectionnez un compte Motuka existant. Son profil sera récupéré automatiquement ; aucune nouvelle inscription n’est nécessaire.</Typography>
+      <Card variant="outlined" sx={{ borderRadius: 3 }}><CardContent sx={{ p: 3 }}>
+        {loading ? <CircularProgress size={24} /> : <>
+          <Autocomplete
+            options={candidates}
+            value={selected}
+            onChange={(_, value) => setSelected(value)}
+            getOptionLabel={user => [user.displayName, user.email || user.phoneNumber].filter(Boolean).join(" — ") || user.id}
+            isOptionEqualToValue={(a, b) => a.id === b.id}
+            renderInput={params => <TextField {...params} label="Rechercher un utilisateur existant" placeholder="Nom, email ou téléphone" />}
+          />
+          <Box mt={2} mb={2}>
+            {selected && <Typography variant="body2">Compte sélectionné : {selected.displayName || selected.email || selected.id}</Typography>}
+            {!candidates.length && <Typography color="text.secondary" variant="body2">Aucun utilisateur éligible dans les résultats chargés.</Typography>}
+          </Box>
+          <Button variant="contained" onClick={assign} disabled={!selected || saving}>{saving ? "Attribution en cours…" : "Assigner comme commissionnaire"}</Button>
+        </>}
+      </CardContent></Card>
+      <Snackbar open={message.open} autoHideDuration={5000} onClose={() => setMessage(prev => ({ ...prev, open: false }))}>
+        <Alert severity={message.severity} onClose={() => setMessage(prev => ({ ...prev, open: false }))}>{message.text}</Alert>
+      </Snackbar>
+    </Container>
+  );
 }

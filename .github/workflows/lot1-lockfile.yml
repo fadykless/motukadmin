@@ -1,0 +1,35 @@
+name: Motuka Admin - synchronize lockfile (Lot 1)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    if: github.ref == 'refs/heads/feature/admin-security-partners'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Regenerate lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Verify lockfile needs no changes
+        run: |
+          if ! git diff --exit-code -- package-lock.json; then
+            echo "Lockfile is out of sync; regenerate and commit it through a reviewed change."
+            exit 1
+          fi
+      - name: Verify clean installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+        env:
+          CI: 'true'

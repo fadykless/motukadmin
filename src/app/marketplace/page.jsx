@@ -40,6 +40,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/firebase";
+import { adminApi } from "@/lib/client/admin-api";
 import { toast } from "react-toastify";
 import { CarCrash, Dashboard, DirectionsCarRounded } from "@mui/icons-material";
 
@@ -222,66 +223,23 @@ const Products = () => {
 
     const updateStatus = async (newStatus) => {
         if (!selectedIds.length) return;
-
         setLoading(true);
-
         try {
-            const batch = writeBatch(db);
-
-            selectedIds.forEach((id) => {
-                batch.update(
-                    doc(db, "products", id),
-                    {
-                        status: newStatus,
-                        updatedAt: Date.now()
-                    }
-                );
-            });
-
-            await batch.commit();
-
-            toast.success("Action effectuée");
-
-            setSelectedIds([]);
-            setSelectionMode(false);
-        } catch (error) {
-            toast.error(error.message);
-        } finally {
-            setLoading(false);
-        }
+            await adminApi("/api/admin/products", { method: "PATCH", body: JSON.stringify({ ids: selectedIds, status: newStatus }) });
+            toast.success("Statuts mis à jour");
+            setSelectedIds([]); setSelectionMode(false);
+        } catch (error) { toast.error(error.message); }
+        finally { setLoading(false); }
     };
-
     const deleteSelected = async () => {
-        if (
-            !window.confirm(
-                `Supprimer ${selectedIds.length} annonces ?`
-            )
-        ) {
-            return;
-        }
-
+        if (!selectedIds.length || !window.confirm("Archiver les annonces sélectionnées ?")) return;
         setLoading(true);
-
         try {
-            const batch = writeBatch(db);
-
-            selectedIds.forEach((id) => {
-                batch.delete(
-                    doc(db, "products", id)
-                );
-            });
-
-            await batch.commit();
-
-            toast.success("Annonces supprimées");
-
-            setSelectedIds([]);
-            setSelectionMode(false);
-        } catch (error) {
-            toast.error(error.message);
-        } finally {
-            setLoading(false);
-        }
+            await adminApi("/api/admin/products", { method: "DELETE", body: JSON.stringify({ ids: selectedIds }) });
+            toast.success("Annonces archivées");
+            setSelectedIds([]); setSelectionMode(false);
+        } catch (error) { toast.error(error.message); }
+        finally { setLoading(false); }
     };
 
     return (

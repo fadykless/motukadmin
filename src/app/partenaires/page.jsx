@@ -7,6 +7,7 @@ import {
     Box,
     Chip,
     Container,
+    Button,
     Fab,
     FormControl,
     Grid,
@@ -23,8 +24,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/firebase";
+import { adminApi } from "@/lib/client/admin-api";
 
 const cities = [
     "Toutes les villes",
@@ -50,12 +50,8 @@ const statuses = [
         label: "Actifs",
     },
     {
-        value: "pending",
-        label: "En attente",
-    },
-    {
-        value: "suspended",
-        label: "Suspendus",
+        value: "blocked",
+        label: "Comptes bloqués",
     },
 ];
 
@@ -80,17 +76,13 @@ const statusConfig = {
         label: "Actif",
         color: "success",
     },
-    pending: {
-        label: "En attente",
-        color: "warning",
-    },
-    suspended: {
-        label: "Suspendu",
+    blocked: {
+        label: "Compte bloqué",
         color: "error",
     },
 };
 
-const PartnerCard = ({ partner }) => {
+const PartnerCard = ({ partner, onRevoke, busy }) => {
     const status = statusConfig[partner.status] || {
         label: "Inconnu",
         color: "default",
@@ -215,6 +207,9 @@ const PartnerCard = ({ partner }) => {
                         </Typography>
                     </Box>
                 </Box>
+                <Button color="error" size="small" sx={{ mt: 2 }} disabled={busy} onClick={() => onRevoke(partner)}>
+                    Retirer le statut commissionnaire
+                </Button>
             </Box>
         </Grid>
     );
@@ -226,6 +221,7 @@ export default function PartnersPage() {
     const [city, setCity] = useState("Toutes les villes");
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
+    const [busyId, setBusyId] = useState(null);
 
     const [snackbar, setSnackbar] = useState({
         open: false,
@@ -234,41 +230,24 @@ export default function PartnersPage() {
     });
 
     useEffect(() => {
-        const usersRef = collection(db, "partners");
-
-        const unsubscribe = onSnapshot(
-            usersRef,
-            (snapshot) => {
-                const data = snapshot.docs
-                    .map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }))
-                    .filter(
-                        (user) =>
-                            user.role === "partner" &&
-                            user.partnerType === "commissionnaire"
-                    );
-
-                setPartners(data);
-                setLoading(false);
-            },
-            (error) => {
-                console.error(error);
-
-                setSnackbar({
-                    open: true,
-                    message:
-                        "Impossible de récupérer les partenaires.",
-                    severity: "error",
-                });
-
-                setLoading(false);
-            }
-        );
-
-        return unsubscribe;
+        let active = true;
+        adminApi("/api/admin/partners").then(({ partners }) => {
+            if (active) setPartners(partners.filter(p => p.partnerType === "commissionnaire"));
+        }).catch(error => { console.error("Partners API", error); if (active) setSnackbar({ open: true, severity: "error", message: error.message }); }).finally(() => { if (active) setLoading(false); });
+        return () => { active = false; };
     }, []);
+
+    const revokePartner = async (partner) => {
+        if (!window.confirm(`Retirer le statut commissionnaire de ${partner.displayName || partner.id} ?`)) return;
+        setBusyId(partner.id);
+        try {
+            await adminApi("/api/admin/partners", { method: "PATCH", body: JSON.stringify({ uid: partner.id, isPartner: false }) });
+            setPartners(previous => previous.filter(item => item.id !== partner.id));
+            setSnackbar({ open: true, severity: "success", message: "Statut commissionnaire retiré." });
+        } catch (error) {
+            setSnackbar({ open: true, severity: "error", message: error.message });
+        } finally { setBusyId(null); }
+    };
 
     const filteredPartners = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -488,6 +467,8 @@ export default function PartnersPage() {
                         <PartnerCard
                             key={partner.id}
                             partner={partner}
+                            onRevoke={revokePartner}
+                            busy={busyId === partner.id}
                         />
                     ))}
                 </Grid>

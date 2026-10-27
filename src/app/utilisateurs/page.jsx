@@ -2,40 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 
-import {
-    Box,
-    Grid,
-    Paper,
-    Typography,
-    Avatar,
-    Chip,
-    IconButton,
-    Menu,
-    MenuItem,
-    TextField,
-    FormControl,
-    InputLabel,
-    Select,
-    Divider
-} from "@mui/material";
-
+import { Box, Grid, Paper, Typography, Avatar, Chip, IconButton, Menu, MenuItem, TextField, FormControl, InputLabel, Select, Divider } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PersonIcon from "@mui/icons-material/Person";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { adminApi } from "@/lib/client/admin-api";
 
-import {
-    collection,
-    onSnapshot,
-    query,
-    orderBy,
-    updateDoc,
-    deleteDoc,
-    doc
-} from "firebase/firestore";
-
-import { db } from "@/firebase";
 import { toast } from "react-toastify";
 
 const Users = () => {
@@ -47,22 +21,12 @@ const Users = () => {
     const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
-        const q = query(
-            collection(db, "users")
-        );
-
-        const unsubscribe =
-            onSnapshot(q, (snapshot) => {
-                const result =
-                    snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                setUsers(result);
-                setData(result);
-            });
-        return unsubscribe;
-    }, [data]);
+        let active = true;
+        adminApi("/api/admin/users").then(({ users }) => {
+            if (active) { setUsers(users); setData(users); }
+        }).catch(error => toast.error(error.message));
+        return () => { active = false; };
+    }, []);
 
 
     const filterUsers = (value) => {
@@ -72,9 +36,9 @@ const Users = () => {
             users.filter(user => {
                 const text =
                     (
-                        user.displayName +
-                        user.email +
-                        user.phoneNumber
+                        (user.displayName || "") +
+                        (user.email || "") +
+                        (user.phoneNumber || "")
                     )
                         .toLowerCase();
                 return text.includes(
@@ -123,21 +87,10 @@ const Users = () => {
         try {
 
 
-            await updateDoc(
-
-                doc(
-                    db,
-                    "users",
-                    selectedUser.id
-                ),
-
-                {
-
-                    status
-
-                }
-
-            );
+            await adminApi("/api/admin/users", { method: "PATCH", body: JSON.stringify({ uid: selectedUser.id, status }) });
+            const applyStatus = u => u.id === selectedUser.id ? { ...u, status, ...(status === "blocked" ? { isPartner: false } : {}) } : u;
+            setUsers(prev => prev.map(applyStatus));
+            setData(prev => prev.map(applyStatus));
 
 
 
@@ -164,40 +117,8 @@ const Users = () => {
     };
 
     const deleteUser = async () => {
-        if (
-            !window.confirm(
-                "Supprimer cet utilisateur ?"
-            )
-        )
-            return;
-
-        try {
-            await deleteDoc(
-                doc(
-                    db,
-                    "users",
-                    selectedUser.id
-                )
-            );
-
-            toast.success(
-                "Utilisateur supprimé"
-            );
-
-        }
-        catch (error) {
-
-            toast.error(
-                error.message
-            );
-
-        }
-
-
-
+        toast.error("Suppression de compte désactivée : procédure de conservation à valider.");
         closeMenu();
-
-
     };
 
 
