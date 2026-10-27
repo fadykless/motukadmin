@@ -1,10 +1,11 @@
+import { validateClosure, CLOSED_REASONS } from "@/lib/server/prospect-closure.mjs";
 import { adminAuth, adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
 import { FieldValue } from "firebase-admin/firestore";
 
 export const runtime = "nodejs";
 
 const STATUSES = new Set(["new", "contacted", "qualified", "in_progress", "closed"]);
-const REASONS = new Set(["not_interested", "unreachable", "vehicle_unavailable", "duplicate", "completed", "other"]);
+const REASONS = CLOSED_REASONS;
 
 function id(value, label) {
   const result = requireString(value, label, 128);
@@ -107,8 +108,7 @@ export async function PATCH(request, { params }) {
       const status = body.status ?? previous.status ?? "new";
       const reason = status === "closed" ? (body.closedReason ?? previous.closedReason) : null;
       const comment = status === "closed" ? (body.closedComment ?? previous.closedComment ?? null) : null;
-      if (status === "closed" && !REASONS.has(reason)) throw new HttpError(400, "Motif de clôture obligatoire");
-      if (status === "closed" && reason === "other" && !String(comment || "").trim()) throw new HttpError(400, "Commentaire obligatoire");
+      if (!validateClosure(status, reason, comment)) throw new HttpError(400, "Motif ou commentaire de clôture invalide");
       const update = {
         status,
         closedReason: reason,
