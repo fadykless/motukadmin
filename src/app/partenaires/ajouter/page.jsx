@@ -9,6 +9,7 @@ export default function AddPartner() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reason, setReason] = useState("");
   const [message, setMessage] = useState({ open: false, severity: "success", text: "" });
 
   useEffect(() => {
@@ -28,12 +29,13 @@ export default function AddPartner() {
   }, [users]);
 
   const assign = async () => {
-    if (!selected?.id) return;
+    if (!selected?.id || !reason.trim()) return;
     setSaving(true);
     try {
-      await adminApi("/api/admin/partners", { method: "POST", body: JSON.stringify({ uid: selected.id }) });
+      await adminApi("/api/admin/partners", { method: "POST", body: JSON.stringify({ uid: selected.id, reason: reason.trim() }) });
       setUsers(prev => prev.map(user => user.id === selected.id ? { ...user, isPartner: true } : user));
       setSelected(null);
+      setReason("");
       setMessage({ open: true, severity: "success", text: "Utilisateur assigné comme commissionnaire." });
     } catch (error) {
       setMessage({ open: true, severity: "error", text: error.message });
@@ -58,7 +60,8 @@ export default function AddPartner() {
             {selected && <Typography variant="body2">Compte sélectionné : {selected.displayName || selected.email || selected.id}</Typography>}
             {!candidates.length && <Typography color="text.secondary" variant="body2">Aucun utilisateur éligible dans les résultats chargés.</Typography>}
           </Box>
-          <Button variant="contained" onClick={assign} disabled={!selected || saving}>{saving ? "Attribution en cours…" : "Assigner comme commissionnaire"}</Button>
+          <TextField fullWidth multiline minRows={2} label="Justification de l’attribution exceptionnelle" value={reason} onChange={event => setReason(event.target.value)} slotProps={{ htmlInput: { maxLength: 1000 } }} sx={{ mb: 2 }} required />
+          <Button variant="contained" onClick={assign} disabled={!selected || !reason.trim() || saving}>{saving ? "Attribution en cours…" : "Assigner comme commissionnaire"}</Button>
         </>}
       </CardContent></Card>
       <Snackbar open={message.open} autoHideDuration={5000} onClose={() => setMessage(prev => ({ ...prev, open: false }))}>
