@@ -19,6 +19,7 @@ export async function GET(request, context) {
     const data = application.data();
     const user = profile.data() || {};
     return Response.json({
+      canDecide: actor.role === "admin",
       application: {
         uid,
         fullName: data.fullName || "",
