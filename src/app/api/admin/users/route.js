@@ -1,3 +1,4 @@
+import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, requireStaff, fail, HttpError } from "@/lib/server/admin";
 export async function GET(request) {
   try {
@@ -31,7 +32,16 @@ export async function PATCH(request) {
       const ref = db.collection("users").doc(uid);
       const user = await tx.get(ref);
       if (!user.exists) throw new HttpError(404, "Utilisateur introuvable");
-      tx.update(ref, status === "blocked" ? { status, isPartner: false } : { status });
+      const wasPartner = user.data().isPartner === true;
+      const now = FieldValue.serverTimestamp();
+      tx.update(ref, status === "blocked" ? { status, isPartner: false, ...(wasPartner ? { partnerUpdatedAt: now } : {}) } : { status });
+      if (status === "blocked" && wasPartner) {
+        tx.create(db.collection("partnerAuditEvents").doc(), {
+          uid, action: "account_block_revoke", actorUid: actor.uid, actorRole: actor.role,
+          reason: "Blocage administratif du compte", previousIsPartner: true,
+          nextIsPartner: false, createdAt: now,
+        });
+      }
     });
     return Response.json({ ok: true });
   } catch (error) { return fail(error); }
