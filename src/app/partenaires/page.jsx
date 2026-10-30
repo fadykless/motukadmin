@@ -321,7 +321,7 @@ export default function PartnersPage() {
                 </Typography>
             </Box>
 
-            {/* SEARCH + FILTERS */}
+            <Button href="/partenaires/candidatures" variant="outlined" sx={{ mb: 3 }}>Voir les candidatures</Button>\n\n            {/* SEARCH + FILTERS */}
             <Box
                 sx={{
                     p: 2,
