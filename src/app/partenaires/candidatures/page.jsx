@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, FormControl, InputLabel, MenuItem, Paper, Select, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { adminApi } from "@/lib/client/admin-api";
 
 const statusLabels = { pending: "En attente", approved: "Approuvée", rejected: "Refusée" };
@@ -16,6 +16,8 @@ export default function PartnerApplicationsPage() {
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
+  const [reason, setReason] = useState("");
+  const [deciding, setDeciding] = useState(false);
 
   const load = useCallback(async (next = null) => {
     setLoading(true);
@@ -33,6 +35,22 @@ export default function PartnerApplicationsPage() {
   }, [status]);
 
   useEffect(() => { load(); setSelected(null); }, [load]);
+
+  const decide = async (action) => {
+    if (!selected || deciding) return;
+    if (action === "reject" && !reason.trim()) { setError("Le motif du refus est obligatoire."); return; }
+    setDeciding(true);
+    setError("");
+    try {
+      await adminApi("/api/admin/partner-applications/" + encodeURIComponent(selected.application.uid) + "/decision", {
+        method: "POST", body: JSON.stringify({ action, expectedVersion: selected.application.decisionVersion, reason: reason.trim() }),
+      });
+      setReason("");
+      await openDetail(selected.application.uid);
+      await load(cursor);
+    } catch (e) { setError(e.message); }
+    finally { setDeciding(false); }
+  };
 
   const openDetail = async (uid) => {
     setDetailLoading(true);
