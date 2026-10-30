@@ -133,7 +133,7 @@ export default function PartnerApplicationsPage() {
                 <Button variant="outlined" color="error" disabled={deciding || !reason.trim()} onClick={() => decide("reject")}>Refuser avec motif</Button>
               </Stack>
             </Box>
-          )>
+          )}
         </Paper>
       )}
     </Container>
