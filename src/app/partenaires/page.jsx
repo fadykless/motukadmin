@@ -16,6 +16,7 @@ import {
     MenuItem,
     Select,
     Snackbar,
+    Dialog, DialogTitle, DialogContent, DialogActions,
     TextField,
     Typography,
 } from "@mui/material";
@@ -222,6 +223,8 @@ export default function PartnersPage() {
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState(null);
+    const [revokeTarget, setRevokeTarget] = useState(null);
+    const [revokeReason, setRevokeReason] = useState("");
 
     const [snackbar, setSnackbar] = useState({
         open: false,
@@ -238,11 +241,13 @@ export default function PartnersPage() {
     }, []);
 
     const revokePartner = async (partner) => {
-        if (!window.confirm(`Retirer le statut commissionnaire de ${partner.displayName || partner.id} ?`)) return;
+        if (!revokeReason.trim()) return;
         setBusyId(partner.id);
         try {
-            await adminApi("/api/admin/partners", { method: "PATCH", body: JSON.stringify({ uid: partner.id, isPartner: false }) });
+            await adminApi("/api/admin/partners", { method: "PATCH", body: JSON.stringify({ uid: partner.id, isPartner: false, reason: revokeReason.trim() }) });
             setPartners(previous => previous.filter(item => item.id !== partner.id));
+            setRevokeTarget(null);
+            setRevokeReason("");
             setSnackbar({ open: true, severity: "success", message: "Statut commissionnaire retiré." });
         } catch (error) {
             setSnackbar({ open: true, severity: "error", message: error.message });
@@ -467,7 +472,7 @@ export default function PartnersPage() {
                         <PartnerCard
                             key={partner.id}
                             partner={partner}
-                            onRevoke={revokePartner}
+                            onRevoke={setRevokeTarget}
                             busy={busyId === partner.id}
                         />
                     ))}
@@ -495,6 +500,18 @@ export default function PartnersPage() {
             >
                 <AddRoundedIcon />
             </Fab>
+
+            <Dialog open={Boolean(revokeTarget)} onClose={() => { if (!busyId) setRevokeTarget(null); }} fullWidth maxWidth="sm">
+                <DialogTitle>Retirer le statut commissionnaire ?</DialogTitle>
+                <DialogContent>
+                    <Typography sx={{ mb: 2 }}>Cette action désactive le droit partenaire sans effacer la décision historique.</Typography>
+                    <TextField fullWidth multiline minRows={2} label="Justification obligatoire" value={revokeReason} onChange={event => setRevokeReason(event.target.value)} slotProps={{ htmlInput: { maxLength: 1000 } }} required />
+                </DialogContent>
+                <DialogActions>
+                    <Button disabled={Boolean(busyId)} onClick={() => setRevokeTarget(null)}>Annuler</Button>
+                    <Button color="error" variant="contained" disabled={!revokeReason.trim() || Boolean(busyId)} onClick={() => revokePartner(revokeTarget)}>Confirmer le retrait</Button>
+                </DialogActions>
+            </Dialog>
 
             {/* SNACKBAR */}
             <Snackbar
