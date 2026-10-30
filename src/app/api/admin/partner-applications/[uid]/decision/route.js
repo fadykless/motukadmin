@@ -8,6 +8,7 @@ export async function POST(request, context) {
     if (typeof uid !== "string" || !uid.trim() || uid.length > 128 || uid.includes("/")) throw new HttpError(400, "UID invalide");
     const body = await request.json();
     const { action, expectedVersion } = body;
+    // Authorization is enforced server-side; never trust a role from the request body.
     if (!["approve", "reject"].includes(action) || !Number.isSafeInteger(expectedVersion) || expectedVersion < 0) throw new HttpError(400, "Décision invalide");
     const reason = action === "reject" ? requireString(body.reason, "Motif", 1000) : null;
     const account = await adminAuth().getUser(uid).catch(error => {
