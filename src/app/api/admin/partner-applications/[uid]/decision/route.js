@@ -28,6 +28,7 @@ export async function POST(request, context) {
       const version = Number.isSafeInteger(a.decisionVersion) ? a.decisionVersion : 0;
       if (a.status !== "pending" || version !== expectedVersion) throw new HttpError(409, "Dossier modifié, rechargez-le");
       if (["blocked", "disabled"].includes(u.status) || u.isPartner === true) throw new HttpError(409, "Compte inéligible");
+      if (a.userId && a.userId !== uid) throw new HttpError(409, "Candidature incohérente");
       const now = FieldValue.serverTimestamp();
       const status = action === "approve" ? "approved" : "rejected";
       tx.update(appRef, { status, decisionVersion: version + 1, updatedAt: now, reviewedAt: now, reviewedBy: actor.uid, rejectionReason: reason });
