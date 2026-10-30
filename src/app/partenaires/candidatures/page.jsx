@@ -67,7 +67,7 @@ export default function PartnerApplicationsPage() {
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "start", sm: "center" }} gap={2} mb={3}>
         <Box>
           <Typography variant="h4" fontWeight={800}>Candidatures commissionnaires</Typography>
-          <Typography color="text.secondary">Consultation des dossiers — décisions administratives en préparation.</Typography>
+          <Typography color="text.secondary">Consultation des dossiers et décisions administratives sécurisées.</Typography>
         </Box>
         <Button href="/partenaires" variant="outlined">Partenaires actifs</Button>
       </Stack>
@@ -124,7 +124,16 @@ export default function PartnerApplicationsPage() {
               {event.reason && <Typography variant="body2" color="text.secondary">{event.reason}</Typography>}
             </Box>
           ))}
-          <Alert severity="info" sx={{ mt: 2 }}>Les décisions sont désactivées jusqu'à la validation des transactions et des permissions C2.3.</Alert>
+          {selected.application.status === "pending" && (
+            <Box sx={{ mt: 3 }}>
+              <Alert severity="warning" sx={{ mb: 2 }}>Actions réservées aux administrateurs. Ne pas traiter de candidatures réelles avant autorisation.</Alert>
+              <TextField fullWidth multiline minRows={2} label="Motif du refus" value={reason} onChange={e => setReason(e.target.value)} slotProps={{ htmlInput: { maxLength: 1000 } }} sx={{ mb: 2 }} />
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button variant="contained" disabled={deciding} onClick={() => decide("approve")}>Approuver</Button>
+                <Button variant="outlined" color="error" disabled={deciding || !reason.trim()} onClick={() => decide("reject")}>Refuser avec motif</Button>
+              </Stack>
+            </Box>
+          )>
         </Paper>
       )}
     </Container>
