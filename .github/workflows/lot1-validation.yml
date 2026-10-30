@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/admin-security-partners
+      - feature/commissionnaire-c2-admin
   pull_request:
     branches:
       - main
