@@ -1,5 +1,6 @@
-import { adminAuth, adminDb, requireStaff, fail, HttpError, requireString } from "@/lib/server/admin";
+import { adminAuth, adminDb, requireStaff, fail, HttpError } from "@/lib/server/admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { validatePartnerDecision, evaluatePartnerDecision } from "@/lib/partnerDecisionPolicy.mjs";
 
 export async function POST(request, context) {
   try {
@@ -7,10 +8,9 @@ export async function POST(request, context) {
     const { uid } = await context.params;
     if (typeof uid !== "string" || !uid.trim() || uid.length > 128 || uid.includes("/")) throw new HttpError(400, "UID invalide");
     const body = await request.json();
-    const { action, expectedVersion } = body;
-    // Authorization is enforced server-side; never trust a role from the request body.
-    if (!["approve", "reject"].includes(action) || !Number.isSafeInteger(expectedVersion) || expectedVersion < 0) throw new HttpError(400, "Décision invalide");
-    const reason = action === "reject" ? requireString(body.reason, "Motif", 1000) : null;
+    const parsed = validatePartnerDecision(body);
+    if (!parsed.ok) throw new HttpError(400, parsed.error);
+    const { action, expectedVersion, reason } = parsed;
     const account = await adminAuth().getUser(uid).catch(error => {
       if (error.code === "auth/user-not-found") throw new HttpError(409, "Compte introuvable");
       throw error;
@@ -22,14 +22,11 @@ export async function POST(request, context) {
     const eventRef = appRef.collection("history").doc();
     await db.runTransaction(async tx => {
       const [app, user] = await Promise.all([tx.get(appRef), tx.get(userRef)]);
-      if (!app.exists) throw new HttpError(404, "Candidature introuvable");
-      if (!user.exists) throw new HttpError(409, "Profil introuvable");
-      const a = app.data();
-      const u = user.data();
-      const version = Number.isSafeInteger(a.decisionVersion) ? a.decisionVersion : 0;
-      if (a.status !== "pending" || version !== expectedVersion) throw new HttpError(409, "Dossier modifié, rechargez-le");
-      if (["blocked", "disabled"].includes(u.status) || u.isPartner === true) throw new HttpError(409, "Compte inéligible");
-      if (a.userId && a.userId !== uid) throw new HttpError(409, "Candidature incohérente");
+      const a = app.exists ? app.data() : null;
+      const u = user.exists ? user.data() : null;
+      const eligibility = evaluatePartnerDecision(a, u, expectedVersion, uid);
+      if (!eligibility.ok) throw new HttpError(eligibility.status, eligibility.error);
+      const version = eligibility.version;
       const now = FieldValue.serverTimestamp();
       const status = action === "approve" ? "approved" : "rejected";
       tx.update(appRef, { status, decisionVersion: version + 1, updatedAt: now, reviewedAt: now, reviewedBy: actor.uid, rejectionReason: reason });
