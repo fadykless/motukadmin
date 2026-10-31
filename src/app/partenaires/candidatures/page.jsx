@@ -11,6 +11,7 @@ export default function PartnerApplicationsPage() {
   const [status, setStatus] = useState("all");
   const [items, setItems] = useState([]);
   const [cursor, setCursor] = useState(null);
+  const [cursorHistory, setCursorHistory] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,21 @@ export default function PartnerApplicationsPage() {
     finally { setLoading(false); }
   }, [status]);
 
-  useEffect(() => { load(); setSelected(null); }, [load]);
+  useEffect(() => { load(); setSelected(null); setCursorHistory([]); setReason(""); }, [load]);
+
+  const nextPage = async () => {
+    if (!nextCursor || loading) return;
+    const previous = cursor;
+    await load(nextCursor);
+    setCursorHistory(history => [...history, previous]);
+  };
+
+  const previousPage = async () => {
+    if (!cursorHistory.length || loading) return;
+    const previous = cursorHistory[cursorHistory.length - 1];
+    await load(previous);
+    setCursorHistory(history => history.slice(0, -1));
+  };
 
   const decide = async (action) => {
     if (!selected?.canDecide || deciding) return;
@@ -96,8 +111,11 @@ export default function PartnerApplicationsPage() {
               </Stack>
             </Paper>
           ))}
-          {nextCursor && <Button disabled={loading} onClick={() => load(nextCursor)}>Page suivante</Button>}
-          {cursor && <Button onClick={() => load()}>Revenir à la première page</Button>}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            {cursorHistory.length > 0 && <Button disabled={loading} onClick={previousPage}>Page précédente</Button>}
+            {nextCursor && <Button disabled={loading} onClick={nextPage}>Page suivante</Button>}
+            {cursor && <Button disabled={loading} onClick={() => { setCursorHistory([]); load(); }}>Première page</Button>}
+          </Stack>
         </Stack>
       )}
       {detailLoading && <CircularProgress size={22} sx={{ mt: 3 }} />}
