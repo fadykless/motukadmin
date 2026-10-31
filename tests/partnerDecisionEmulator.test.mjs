@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { initializeApp, deleteApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { evaluatePartnerDecision } from "../src/lib/partnerDecisionPolicy.mjs";
 
 const host = process.env.FIRESTORE_EMULATOR_HOST || "";
 const projectId = process.env.GCLOUD_PROJECT || "";
@@ -18,9 +19,8 @@ const user = db.collection("users").doc(uid);
 async function decide(expectedVersion, nextStatus) {
   return db.runTransaction(async tx => {
     const [a, u] = await Promise.all([tx.get(application), tx.get(user)]);
-    if (a.data()?.status !== "pending" || a.data()?.decisionVersion !== expectedVersion || u.data()?.isPartner) {
-      throw new Error("conflict");
-    }
+    const eligibility = evaluatePartnerDecision(a.data(), u.data(), expectedVersion, uid);
+    if (!eligibility.ok) throw new Error(eligibility.error);
     tx.update(application, { status: nextStatus, decisionVersion: expectedVersion + 1 });
     if (nextStatus === "approved") tx.update(user, { isPartner: true });
     tx.create(application.collection("history").doc(), { action: nextStatus });
@@ -28,7 +28,7 @@ async function decide(expectedVersion, nextStatus) {
 }
 
 test("one concurrent decision succeeds and one audit event is created", async () => {
-  await application.set({ status: "pending", decisionVersion: 0 });
+  await application.set({ userId: uid, status: "pending", decisionVersion: 0 });
   await user.set({ isPartner: false });
   const results = await Promise.allSettled([decide(0, "approved"), decide(0, "rejected")]);
   assert.equal(results.filter(x => x.status === "fulfilled").length, 1);
