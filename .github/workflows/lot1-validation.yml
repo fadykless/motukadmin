@@ -31,6 +31,8 @@ jobs:
         run: npm run lint
       - name: Validate security smoke-test script syntax
         run: node --check scripts/test-admin-access.mjs
+      - name: C2 decision policy unit tests
+        run: node --test tests/partnerDecisionPolicy.test.mjs
       - name: Build
         run: npm run build
         env:
