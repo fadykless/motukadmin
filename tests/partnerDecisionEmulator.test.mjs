@@ -5,7 +5,7 @@ import { getFirestore } from "firebase-admin/firestore";
 
 const host = process.env.FIRESTORE_EMULATOR_HOST || "";
 const projectId = process.env.GCLOUD_PROJECT || "";
-if (!/^(localhost|127\\.0\\.0\\.1):[0-9]+$/.test(host) || !/^demo-[a-z0-9-]+$/.test(projectId)) {
+if (!/^(localhost|127\.0\.0\.1):[0-9]+$/.test(host) || !/^demo-[a-z0-9-]+$/.test(projectId)) {
   throw new Error("Only a local Firestore emulator with demo-* project is allowed");
 }
 
