@@ -10,14 +10,19 @@ export async function GET(request, context) {
       throw new HttpError(400, "Identifiant invalide");
     }
     const db = adminDb();
-    const [application, profile, history] = await Promise.all([
+    const [application, profile, history, partnerAudit] = await Promise.all([
       db.collection("partnerApplications").doc(uid).get(),
       db.collection("users").doc(uid).get(),
       db.collection("partnerApplications").doc(uid).collection("history").orderBy("createdAt", "desc").limit(50).get(),
+      db.collection("partnerAuditEvents").where("uid", "==", uid).limit(100).get(),
     ]);
     if (!application.exists) throw new HttpError(404, "Candidature introuvable");
     const data = application.data();
     const user = profile.data() || {};
+    const events = [
+      ...history.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+      ...partnerAudit.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+    ].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).slice(0, 50);
     return Response.json({
       canDecide: actor.role === "admin",
       application: {
@@ -37,10 +42,9 @@ export async function GET(request, context) {
         accountStatus: user.status || "unknown",
         profileExists: profile.exists,
       },
-      history: history.docs.map(doc => {
-        const item = doc.data();
+      history: events.map(item => {
         return {
-          id: doc.id,
+          id: item.id,
           action: item.action || "unknown",
           actorUid: item.actorUid || null,
           reason: actor.role === "admin" ? item.reason || null : null,
