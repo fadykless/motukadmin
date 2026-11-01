@@ -55,6 +55,15 @@ jobs:
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
         run: |
           npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/seed-c2-emulator.mjs'
+      - name: C2 isolated HTTP authorization smoke tests
+        env:
+          GCLOUD_PROJECT: demo-motuka-c2
+          GOOGLE_CLOUD_PROJECT: demo-motuka-c2
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          NEXT_PUBLIC_C2_EMULATOR_MODE: 'true'
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/run-c2-local-http.mjs'
       - name: Build
         run: npm run build
         env:
