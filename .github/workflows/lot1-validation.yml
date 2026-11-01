@@ -47,6 +47,14 @@ jobs:
         run: |
           printf '{"emulators":{"firestore":{"host":"127.0.0.1","port":8080},"ui":{"enabled":false}}}\n' > /tmp/motuka-c2-firebase.json
           npx --yes firebase-tools@14 emulators:exec --config /tmp/motuka-c2-firebase.json --only firestore --project demo-motuka-c2 'node --test tests/partnerDecisionEmulator.test.mjs'
+      - name: C2 fictional accounts seed in isolated Auth and Firestore emulators
+        env:
+          GCLOUD_PROJECT: demo-motuka-c2
+          GOOGLE_CLOUD_PROJECT: demo-motuka-c2
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/seed-c2-emulator.mjs'
       - name: Build
         run: npm run build
         env:
