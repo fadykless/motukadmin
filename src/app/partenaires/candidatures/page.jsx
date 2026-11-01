@@ -53,7 +53,6 @@ export default function PartnerApplicationsPage() {
   const decide = async (action) => {
     if (!selected?.canDecide || deciding) return;
     if (action === "reject" && !reason.trim()) { setError("Le motif du refus est obligatoire."); return; }
-    if (!window.confirm(action === "approve" ? "Confirmer l’approbation de cette candidature ?" : "Confirmer le refus de cette candidature ?")) return;
     setDeciding(true);
     setError("");
     try {
