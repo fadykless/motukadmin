@@ -62,3 +62,21 @@ Ce script prépare cinq comptes fictifs (`c2-test-admin`, `c2-test-manager`, `c2
 Pour récupérer un jeton fictif après initialisation, appeler l'endpoint Auth Emulator `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key` avec `email`, `password` et `returnSecureToken:true`. Ne jamais utiliser de compte réel. Vérifier que Next.js a été démarré avec les mêmes variables d'émulateurs avant tout appel HTTP.
 
 **Point ouvert :** la configuration Firebase client utilisée par l'interface et le lancement complet du serveur local restent à vérifier ; ne pas considérer la recette HTTP comme exécutée.
+
+## Isolation du client Firebase Next.js
+
+Le fichier `src/firebase/index.js` accepte `NEXT_PUBLIC_C2_EMULATOR_MODE=true` pour remplacer la configuration du client par le projet fictif `demo-motuka-c2`, brancher Auth sur `127.0.0.1:9099` et Firestore sur `127.0.0.1:8080`. Le cache persistant est remplacé par un cache mémoire dans ce mode. **Ne jamais activer ce flag sur un déploiement public** ; la configuration de production reste utilisée par défaut.
+
+Dans le terminal qui lance Next.js, après avoir démarré les émulateurs :
+
+```sh
+export NEXT_PUBLIC_C2_EMULATOR_MODE=true
+export GCLOUD_PROJECT=demo-motuka-c2
+export GOOGLE_CLOUD_PROJECT=demo-motuka-c2
+export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+unset FIREBASE_SERVICE_ACCOUNT_JSON GOOGLE_APPLICATION_CREDENTIALS
+npm run dev -- --hostname 127.0.0.1
+```
+
+La configuration côté serveur doit aussi utiliser exclusivement les émulateurs. Le flag client seul ne prouve pas l'isolation de toutes les routes serveur. Vérifier les requêtes réseau du navigateur avant d'exécuter les tests de décision.
