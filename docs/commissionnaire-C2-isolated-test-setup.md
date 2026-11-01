@@ -80,3 +80,9 @@ npm run dev -- --hostname 127.0.0.1
 ```
 
 La configuration côté serveur doit aussi utiliser exclusivement les émulateurs. Le flag client seul ne prouve pas l'isolation de toutes les routes serveur. Vérifier les requêtes réseau du navigateur avant d'exécuter les tests de décision.
+
+## Garde serveur C2
+
+`src/lib/server/admin.js` vérifie désormais au premier accès Firebase Admin que `NEXT_PUBLIC_C2_EMULATOR_MODE=true` implique obligatoirement `GCLOUD_PROJECT=demo-motuka-c2`, `GOOGLE_CLOUD_PROJECT=demo-motuka-c2`, `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` et `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`, sans compte de service. Si ces conditions ne sont pas réunies, l'initialisation échoue au lieu d'utiliser Firebase réel.
+
+Attention : ce garde protège les routes qui utilisent `src/lib/server/admin.js`. Toute autre initialisation Firebase dans le dépôt doit être vérifiée séparément. Les tests HTTP réels restent à exécuter.
