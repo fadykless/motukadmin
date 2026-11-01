@@ -31,7 +31,8 @@ export default function PartnerApplicationsPage() {
       setItems(result.applications || []);
       setCursor(next);
       setNextCursor(result.nextCursor || null);
-    } catch (e) { setError(e.message); }
+      return true;
+    } catch (e) { setError(e.message); return false; }
     finally { setLoading(false); }
   }, [status]);
 
@@ -40,15 +41,13 @@ export default function PartnerApplicationsPage() {
   const nextPage = async () => {
     if (!nextCursor || loading) return;
     const previous = cursor;
-    await load(nextCursor);
-    setCursorHistory(history => [...history, previous]);
+    if (await load(nextCursor)) setCursorHistory(history => [...history, previous]);
   };
 
   const previousPage = async () => {
     if (!cursorHistory.length || loading) return;
     const previous = cursorHistory[cursorHistory.length - 1];
-    await load(previous);
-    setCursorHistory(history => history.slice(0, -1));
+    if (await load(previous)) setCursorHistory(history => history.slice(0, -1));
   };
 
   const decide = async (action) => {
