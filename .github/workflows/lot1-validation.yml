@@ -5,6 +5,7 @@ on:
     branches:
       - feature/admin-security-partners
       - feature/commissionnaire-c2-admin
+      - fix/c2-audit-history-pagination
   pull_request:
     branches:
       - main
