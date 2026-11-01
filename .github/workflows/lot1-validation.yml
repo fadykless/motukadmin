@@ -31,7 +31,7 @@ jobs:
         run: npm run lint
       - name: Validate security smoke-test script syntax
         run: node --check scripts/test-admin-access.mjs
-      - name: C2 decision policy unit tests
+      - name: Validate fictional emulator seed syntax\n        run: node --check scripts/seed-c2-emulator.mjs\n      - name: C2 decision policy unit tests
         run: node --test tests/partnerDecisionPolicy.test.mjs
       - name: Validate C2 emulator test syntax (no production connection)
         run: node --check tests/partnerDecisionEmulator.test.mjs
