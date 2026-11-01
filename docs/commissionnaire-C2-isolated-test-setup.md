@@ -11,7 +11,7 @@
 - Dans un **second terminal**, préparer le serveur avec `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`, `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`, `GCLOUD_PROJECT=demo-motuka-c2` et `GOOGLE_CLOUD_PROJECT=demo-motuka-c2`. Les variables publiques `NEXT_PUBLIC_FIREBASE_*` doivent également désigner une configuration de test cohérente ; ne jamais reprendre celles de production.
 - Le lancement de Next.js et la création de comptes fictifs exigent encore une vérification des paramètres Firebase client du dépôt. **Ne pas exécuter de scénario de décision avant cette vérification.**
 - Comptes à préparer dans Auth Emulator : administrateur, manager, utilisateur standard et candidat fictif. Les profils Firestore correspondants doivent porter les rôles `admin`, `manager`, `user` et le statut `active`. Une candidature fictive `pending` avec `decisionVersion:0` et `isPartner:false` est requise pour les tests de décision.
-- Les tests HTTP sont uniquement autorisés sur l'adresse locale ou sur une préproduction explicitement isolée. Le script `scripts/test-admin-access.mjs` actuel exige un hôte HTTPS de staging : **il n'est pas encore adapté au serveur local HTTP**, et ne doit pas être contourné en utilisant la production.
+- Les tests HTTP sont uniquement autorisés sur l'adresse locale ou sur une préproduction explicitement isolée. Le script `scripts/test-admin-access.mjs` accepte désormais `http://127.0.0.1:<port>/` uniquement si les quatre variables de garde (`GCLOUD_PROJECT`, `GOOGLE_CLOUD_PROJECT`, `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`) correspondent exactement au projet fictif et aux ports locaux documentés. Les trois jetons doivent provenir de comptes fictifs Auth Emulator. Ne pas utiliser de jetons réels.
 
 ## Option cloud ultérieure : projet Firebase de test distinct
 
@@ -27,3 +27,19 @@ Créer manuellement un projet Firebase distinct, avec **nouvel ID**, règles et 
 6. Rapport PASS/FAIL/BLOCKED avec preuves et accord Product Manager + Operations Manager avant toute exploitation réelle.
 
 **NO-GO** pour la fusion de la PR #5, l'attribution réelle de droits et le déploiement en production tant qu'aucune autorisation explicite n'a été reçue.
+
+## Exécution HTTP locale (après démarrage serveur et création des comptes fictifs)
+
+Dans le terminal de recette :
+
+```sh
+export GCLOUD_PROJECT=demo-motuka-c2
+export GOOGLE_CLOUD_PROJECT=demo-motuka-c2
+export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+export ADMIN_BASE_URL=http://127.0.0.1:3000/
+# Définir ADMIN_ID_TOKEN, MANAGER_ID_TOKEN et USER_ID_TOKEN obtenus dans Auth Emulator.
+node scripts/test-admin-access.mjs
+```
+
+Ce script comprend des requêtes POST/PATCH/DELETE qui doivent être **refusées par les permissions** (401/403). Ne l'exécuter qu'après avoir vérifié que le serveur Next.js pointe réellement vers les émulateurs et que les comptes/jetons sont fictifs. Le contrôle des variables du terminal client ne prouve pas, à lui seul, l'isolation du serveur cible.
