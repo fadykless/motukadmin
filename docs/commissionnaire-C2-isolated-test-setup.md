@@ -43,3 +43,22 @@ node scripts/test-admin-access.mjs
 ```
 
 Ce script comprend des requêtes POST/PATCH/DELETE qui doivent être **refusées par les permissions** (401/403). Ne l'exécuter qu'après avoir vérifié que le serveur Next.js pointe réellement vers les émulateurs et que les comptes/jetons sont fictifs. Le contrôle des variables du terminal client ne prouve pas, à lui seul, l'isolation du serveur cible.
+
+## Initialisation de données fictives
+
+Après démarrage des deux émulateurs, dans un second terminal et sans identifiants Firebase réels :
+
+```sh
+export GCLOUD_PROJECT=demo-motuka-c2
+export GOOGLE_CLOUD_PROJECT=demo-motuka-c2
+export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+unset FIREBASE_SERVICE_ACCOUNT_JSON GOOGLE_APPLICATION_CREDENTIALS
+node scripts/seed-c2-emulator.mjs
+```
+
+Ce script prépare cinq comptes fictifs (`c2-test-admin`, `c2-test-manager`, `c2-test-user`, `c2-test-candidate`, `c2-test-blocked`) et une candidature `pending`. Il est conçu pour un émulateur vierge ; le relancer réinitialise les profils et la candidature de test. Les mots de passe ne sont utilisables qu'en local.
+
+Pour récupérer un jeton fictif après initialisation, appeler l'endpoint Auth Emulator `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key` avec `email`, `password` et `returnSecureToken:true`. Ne jamais utiliser de compte réel. Vérifier que Next.js a été démarré avec les mêmes variables d'émulateurs avant tout appel HTTP.
+
+**Point ouvert :** la configuration Firebase client utilisée par l'interface et le lancement complet du serveur local restent à vérifier ; ne pas considérer la recette HTTP comme exécutée.
