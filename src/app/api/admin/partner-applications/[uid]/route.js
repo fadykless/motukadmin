@@ -14,7 +14,7 @@ export async function GET(request, context) {
       db.collection("partnerApplications").doc(uid).get(),
       db.collection("users").doc(uid).get(),
       db.collection("partnerApplications").doc(uid).collection("history").orderBy("createdAt", "desc").limit(50).get(),
-      db.collection("partnerAuditEvents").where("uid", "==", uid).orderBy("createdAt", "desc").limit(50).get(),
+      db.collection("partnerAuditEvents").where("uid", "==", uid).limit(100).get(),
     ]);
     if (!application.exists) throw new HttpError(404, "Candidature introuvable");
     const data = application.data();
