@@ -18,7 +18,7 @@ export async function GET(request) {
         ...(actor.role === "admin" ? { phoneNumber: user.phoneNumber || "" } : {}),
       };
     });
-    return Response.json({ partners });
+    return Response.json({ partners }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return fail(error); }
 }
 
