@@ -39,6 +39,41 @@ test("one concurrent decision succeeds and one audit event is created", async ()
   assert.equal(u.data().isPartner, a.data().status === "approved");
 });
 
+test("stale decision cannot overwrite approved status or create a second event", async () => {
+  await application.set({ userId: uid, status: "pending", decisionVersion: 0 });
+  await user.set({ isPartner: false });
+  const existing = await application.collection("history").get();
+  const cleanup = db.batch();
+  existing.docs.forEach(doc => cleanup.delete(doc.ref));
+  await cleanup.commit();
+  await decide(0, "approved");
+  await assert.rejects(() => decide(0, "rejected"));
+  const [a, u, history] = await Promise.all([
+    application.get(), user.get(), application.collection("history").get(),
+  ]);
+  assert.equal(a.data().status, "approved");
+  assert.equal(a.data().decisionVersion, 1);
+  assert.equal(u.data().isPartner, true);
+  assert.equal(history.size, 1);
+});
+
+test("blocked account cannot be approved and produces no history", async () => {
+  await application.set({ userId: uid, status: "pending", decisionVersion: 0 });
+  await user.set({ isPartner: false, status: "blocked" });
+  const existing = await application.collection("history").get();
+  const cleanup = db.batch();
+  existing.docs.forEach(doc => cleanup.delete(doc.ref));
+  await cleanup.commit();
+  await assert.rejects(() => decide(0, "approved"));
+  const [a, u, history] = await Promise.all([
+    application.get(), user.get(), application.collection("history").get(),
+  ]);
+  assert.equal(a.data().status, "pending");
+  assert.equal(a.data().decisionVersion, 0);
+  assert.equal(u.data().isPartner, false);
+  assert.equal(history.size, 0);
+});
+
 test.after(async () => {
   const history = await application.collection("history").get();
   const batch = db.batch();
