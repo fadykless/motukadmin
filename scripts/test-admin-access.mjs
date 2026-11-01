@@ -42,6 +42,9 @@ const cases = [
   { name: "C2 manager invalid status", path: "/api/admin/partner-applications?status=invalid", token: tokens.manager, expected: 400 },
   { name: "C2 no token / detail", path: "/api/admin/partner-applications/smoke-test", token: null, expected: 401 },
   { name: "C2 user / detail", path: "/api/admin/partner-applications/smoke-test", token: tokens.user, expected: 403 },
+  { name: "C2 manager / seeded detail", path: "/api/admin/partner-applications/c2-test-candidate", token: tokens.manager, expected: 200, hideC2Detail: true },
+  { name: "C2 admin / seeded detail", path: "/api/admin/partner-applications/c2-test-candidate", token: tokens.admin, expected: 200, verifyC2AdminDetail: true },
+  { name: "C2 manager / pending pagination", path: "/api/admin/partner-applications?status=pending&limit=1", token: tokens.manager, expected: 200, verifyC2Pagination: true },
   { name: "C2 no token / decision", path: "/api/admin/partner-applications/smoke-test/decision", method: "POST", token: null, body: { action: "approve", expectedVersion: 0 }, expected: 401 },
   { name: "C2 user / decision", path: "/api/admin/partner-applications/smoke-test/decision", method: "POST", token: tokens.user, body: { action: "approve", expectedVersion: 0 }, expected: 403 },
   { name: "C2 manager / decision", path: "/api/admin/partner-applications/smoke-test/decision", method: "POST", token: tokens.manager, body: { action: "approve", expectedVersion: 0 }, expected: 403 },
@@ -71,6 +74,31 @@ for (const test of cases) {
       signal: AbortSignal.timeout(15000),
     });
     let ok = response.status === test.expected;
+    if (ok && test.hideC2Detail) {
+      const payload = await response.json();
+      ok = payload.canDecide === false
+        && payload.application?.uid === "c2-test-candidate"
+        && !Object.hasOwn(payload.application, "phone")
+        && !Object.hasOwn(payload.application, "rejectionReason")
+        && Array.isArray(payload.history)
+        && payload.history.every(row => row.reason === null)
+        && response.headers.get("cache-control")?.includes("no-store") === true;
+    }
+    if (ok && test.verifyC2AdminDetail) {
+      const payload = await response.json();
+      ok = payload.canDecide === true
+        && payload.application?.uid === "c2-test-candidate"
+        && Object.hasOwn(payload.application, "phone")
+        && response.headers.get("cache-control")?.includes("no-store") === true;
+    }
+    if (ok && test.verifyC2Pagination) {
+      const payload = await response.json();
+      ok = Array.isArray(payload.applications)
+        && payload.applications.length <= 1
+        && payload.applications.every(row => row.status === "pending")
+        && Object.hasOwn(payload, "nextCursor")
+        && response.headers.get("cache-control")?.includes("no-store") === true;
+    }
     if (ok && test.hideC2Phone) {
       const payload = await response.json();
       ok = Array.isArray(payload.applications)
