@@ -53,5 +53,22 @@ await db.collection("partnerApplications").doc("c2-test-candidate").set({
   createdAt: new Date(),
   isTestApplication: true,
 });
+for (const [uid, role] of actors) {
+  const [account, profile] = await Promise.all([
+    auth.getUser(uid),
+    db.collection("users").doc(uid).get(),
+  ]);
+  if (account.uid !== uid || !profile.exists || profile.data().role !== role ||
+      profile.data().isPartner !== false ||
+      profile.data().status !== (uid === "c2-test-blocked" ? "blocked" : "active")) {
+    throw new Error(`Seed verification failed for fictional actor ${uid}`);
+  }
+}
+const seededApplication = await db.collection("partnerApplications").doc("c2-test-candidate").get();
+if (!seededApplication.exists || seededApplication.data().status !== "pending" ||
+    seededApplication.data().decisionVersion !== 0 ||
+    seededApplication.data().isTestApplication !== true) {
+  throw new Error("Seed verification failed for fictional pending application");
+}
 console.log("Seeded 5 fictional Auth users and 1 pending application in local emulators only.");
 console.log("Use Firebase Auth Emulator REST signInWithPassword to obtain ID tokens; never use real tokens.");
