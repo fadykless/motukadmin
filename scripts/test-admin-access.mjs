@@ -9,14 +9,22 @@ const tokens = {
   manager: process.env.MANAGER_ID_TOKEN,
   user: process.env.USER_ID_TOKEN,
 };
-if (!base || !/^https:\/\//.test(base) || !Object.values(tokens).every(Boolean)) {
-  console.error("Required: HTTPS ADMIN_BASE_URL and ADMIN_ID_TOKEN, MANAGER_ID_TOKEN, USER_ID_TOKEN");
+if (!base || !Object.values(tokens).every(Boolean)) {
+  console.error("Required: ADMIN_BASE_URL and ADMIN_ID_TOKEN, MANAGER_ID_TOKEN, USER_ID_TOKEN");
   process.exit(2);
 }
 const url = new URL(base);
-const expectedHost = process.env.ADMIN_STAGING_HOST;
-if (!expectedHost || url.hostname !== expectedHost || process.env.ADMIN_STAGING_CONFIRMED !== "yes") {
-  console.error("Explicit staging host match and ADMIN_STAGING_CONFIRMED=yes are required. Verify Firebase project isolation separately.");
+const localMode = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+const stagingMode = url.protocol === "https:"
+  && !!process.env.ADMIN_STAGING_HOST
+  && url.hostname === process.env.ADMIN_STAGING_HOST
+  && process.env.ADMIN_STAGING_CONFIRMED === "yes";
+const emulatorSafe = process.env.GCLOUD_PROJECT === "demo-motuka-c2"
+  && process.env.GOOGLE_CLOUD_PROJECT === "demo-motuka-c2"
+  && process.env.FIRESTORE_EMULATOR_HOST === "127.0.0.1:8080"
+  && process.env.FIREBASE_AUTH_EMULATOR_HOST === "127.0.0.1:9099";
+if ((!localMode && !stagingMode) || (localMode && !emulatorSafe)) {
+  console.error("Only explicitly confirmed HTTPS staging or localhost with demo-motuka-c2 Auth/Firestore emulators is allowed.");
   process.exit(2);
 }
 if (url.username || url.password || url.pathname !== "/" || url.search || url.hash || ["motukadmin.vercel.app", "motuka.cd", "www.motuka.cd"].includes(url.hostname) || url.hostname.endsWith(".motuka.cd")) {
