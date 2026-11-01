@@ -1,0 +1,173 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Box, Button, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { adminApi } from "@/lib/client/admin-api";
+
+const statusLabels = { pending: "En attente", approved: "Approuvée", rejected: "Refusée" };
+const statusColors = { pending: "warning", approved: "success", rejected: "error" };
+
+export default function PartnerApplicationsPage() {
+  const [status, setStatus] = useState("all");
+  const [items, setItems] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [cursorHistory, setCursorHistory] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [error, setError] = useState("");
+  const [reason, setReason] = useState("");
+  const [deciding, setDeciding] = useState(false);
+
+  const load = useCallback(async (next = null) => {
+    setLoading(true);
+    setError("");
+    try {
+      const query = new URLSearchParams({ limit: "20" });
+      if (status !== "all") query.set("status", status);
+      if (next) query.set("cursor", next);
+      const result = await adminApi("/api/admin/partner-applications?" + query);
+      setItems(result.applications || []);
+      setCursor(next);
+      setNextCursor(result.nextCursor || null);
+      return true;
+    } catch (e) { setError(e.message); return false; }
+    finally { setLoading(false); }
+  }, [status]);
+
+  useEffect(() => { load(); setSelected(null); setCursorHistory([]); setReason(""); }, [load]);
+
+  const nextPage = async () => {
+    if (!nextCursor || loading) return;
+    const previous = cursor;
+    if (await load(nextCursor)) setCursorHistory(history => [...history, previous]);
+  };
+
+  const previousPage = async () => {
+    if (!cursorHistory.length || loading) return;
+    const previous = cursorHistory[cursorHistory.length - 1];
+    if (await load(previous)) setCursorHistory(history => history.slice(0, -1));
+  };
+
+  const decide = async (action) => {
+    setConfirmAction(null);
+    if (!selected?.canDecide || deciding) return;
+    if (action === "reject" && !reason.trim()) { setError("Le motif du refus est obligatoire."); return; }
+    setDeciding(true);
+    setError("");
+    try {
+      await adminApi("/api/admin/partner-applications/" + encodeURIComponent(selected.application.uid) + "/decision", {
+        method: "POST", body: JSON.stringify({ action, expectedVersion: selected.application.decisionVersion, reason: reason.trim() }),
+      });
+      setReason("");
+      await openDetail(selected.application.uid);
+      await load(cursor);
+    } catch (e) { setError(e.message); }
+    finally { setDeciding(false); }
+  };
+
+  const openDetail = async (uid) => {
+    setDetailLoading(true);
+    setError("");
+    try {
+      setSelected(null);
+      setConfirmAction(null);
+      setReason("");
+      const result = await adminApi("/api/admin/partner-applications/" + encodeURIComponent(uid));
+      setSelected(result);
+    } catch (e) { setError(e.message); }
+    finally { setDetailLoading(false); }
+  };
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4, pb: 10 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "start", sm: "center" }} gap={2} mb={3}>
+        <Box>
+          <Typography variant="h4" fontWeight={800}>Candidatures commissionnaires</Typography>
+          <Typography color="text.secondary">Consultation des dossiers et décisions administratives sécurisées.</Typography>
+        </Box>
+        <Button href="/partenaires" variant="outlined">Partenaires actifs</Button>
+      </Stack>
+      <FormControl size="small" sx={{ minWidth: 220, mb: 3 }}>
+        <InputLabel>Statut</InputLabel>
+        <Select label="Statut" value={status} onChange={e => setStatus(e.target.value)}>
+          <MenuItem value="all">Toutes les candidatures</MenuItem>
+          {Object.entries(statusLabels).map(([key, label]) => <MenuItem key={key} value={key}>{label}</MenuItem>)}
+        </Select>
+      </FormControl>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading ? <CircularProgress aria-label="Chargement des candidatures" /> : (
+        <Stack spacing={1.5}>
+          {items.length === 0 && <Alert severity="info">Aucune candidature trouvée.</Alert>}
+          {items.map(item => (
+            <Paper key={item.uid} variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+              <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "start", sm: "center" }} justifyContent="space-between" gap={2}>
+                <Box>
+                  <Typography fontWeight={700}>{item.fullName || "Candidat sans nom"}</Typography>
+                  <Typography variant="body2" color="text.secondary">{item.city || "Ville non renseignée"} · {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString("fr-FR") : "Date inconnue"}</Typography>
+                </Box>
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Chip size="small" label={statusLabels[item.status] || "Inconnu"} color={statusColors[item.status] || "default"} />
+                  <Button onClick={() => openDetail(item.uid)} variant="outlined" disabled={detailLoading}>Consulter</Button>
+                </Stack>
+              </Stack>
+            </Paper>
+          ))}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            {cursorHistory.length > 0 && <Button disabled={loading} onClick={previousPage}>Page précédente</Button>}
+            {nextCursor && <Button disabled={loading} onClick={nextPage}>Page suivante</Button>}
+            {cursor && <Button disabled={loading} onClick={() => { setCursorHistory([]); load(); }}>Première page</Button>}
+          </Stack>
+        </Stack>
+      )}
+      {detailLoading && <CircularProgress size={22} sx={{ mt: 3 }} />}
+      {selected && !detailLoading && (
+        <Paper variant="outlined" sx={{ mt: 4, p: 3, borderRadius: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2}>
+            <Typography variant="h6" fontWeight={700}>Dossier : {selected.application.fullName}</Typography>
+            <Button onClick={() => setSelected(null)}>Fermer</Button>
+          </Stack>
+          <Divider sx={{ my: 2 }} />
+          <Typography><strong>Ville :</strong> {selected.application.city}</Typography>
+          <Typography><strong>Statut candidature :</strong> {statusLabels[selected.application.status] || "Inconnu"}</Typography>
+          <Typography><strong>Droit partenaire :</strong> {selected.partner.isPartner ? "Actif" : "Inactif"}</Typography>
+          <Typography><strong>Compte :</strong> {selected.partner.accountStatus}</Typography>
+          {selected.application.phone && <Typography><strong>Téléphone :</strong> {selected.application.phone}</Typography>}
+          <Typography mt={2} fontWeight={700}>Motivation</Typography>
+          <Typography sx={{ whiteSpace: "pre-wrap" }}>{selected.application.motivation || "Non renseignée"}</Typography>
+          <Typography mt={2} fontWeight={700}>Expérience</Typography>
+          <Typography sx={{ whiteSpace: "pre-wrap" }}>{selected.application.experience || "Non renseignée"}</Typography>
+          <Typography mt={3} fontWeight={700}>Historique</Typography>
+          {selected.history.length === 0 ? <Typography color="text.secondary">Aucun événement enregistré.</Typography> : selected.history.map(event => (
+            <Box key={event.id} sx={{ py: 1 }}>
+              <Typography variant="body2">{event.action} · {event.createdAt ? new Date(event.createdAt).toLocaleString("fr-FR") : "Date inconnue"}</Typography>
+              {event.reason && <Typography variant="body2" color="text.secondary">{event.reason}</Typography>}
+            </Box>
+          ))}
+          {selected.canDecide && selected.application.status === "pending" && (
+            <Box sx={{ mt: 3 }}>
+              <Alert severity="warning" sx={{ mb: 2 }}>Actions réservées aux administrateurs. Ne pas traiter de candidatures réelles avant autorisation.</Alert>
+              <TextField fullWidth multiline minRows={2} label="Motif du refus" value={reason} onChange={e => setReason(e.target.value)} slotProps={{ htmlInput: { maxLength: 1000 } }} sx={{ mb: 2 }} />
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button variant="contained" disabled={deciding} onClick={() => setConfirmAction("approve")}>Approuver</Button>
+                <Button variant="outlined" color="error" disabled={deciding || !reason.trim()} onClick={() => setConfirmAction("reject")}>Refuser avec motif</Button>
+              </Stack>
+            </Box>
+          )}
+        </Paper>
+      )}
+      <Dialog open={confirmAction !== null} onClose={() => !deciding && setConfirmAction(null)}>
+        <DialogTitle>Confirmer la décision</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmAction === "approve" ? "Approuver cette candidature et activer le droit commissionnaire ?" : "Refuser cette candidature avec le motif renseigné ?"}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={deciding} onClick={() => setConfirmAction(null)}>Annuler</Button>
+          <Button disabled={deciding} color={confirmAction === "reject" ? "error" : "primary"} onClick={() => decide(confirmAction)}>Confirmer</Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
+  );
+}
