@@ -74,6 +74,27 @@ test("blocked account cannot be approved and produces no history", async () => {
   assert.equal(history.size, 0);
 });
 
+test("rejection preserves partner flag and creates exactly one decision event", async () => {
+  await application.set({ userId: uid, status: "pending", decisionVersion: 0 });
+  await user.set({ isPartner: false, status: "active" });
+  const existing = await application.collection("history").get();
+  const cleanup = db.batch();
+  existing.docs.forEach(doc => cleanup.delete(doc.ref));
+  await cleanup.commit();
+
+  await decide(0, "rejected");
+  const [a, u, history] = await Promise.all([
+    application.get(), user.get(), application.collection("history").get(),
+  ]);
+  assert.equal(a.data().status, "rejected");
+  assert.equal(a.data().decisionVersion, 1);
+  assert.equal(u.data().isPartner, false);
+  assert.equal(history.size, 1);
+  assert.equal(history.docs[0].data().action, "rejected");
+  await assert.rejects(() => decide(0, "approved"));
+  assert.equal((await application.collection("history").get()).size, 1);
+});
+
 test("audit history query selects newest events when more than 100 exist", async () => {
   const audit = db.collection("partnerAuditEvents");
   const auditUid = uid + "-audit";
