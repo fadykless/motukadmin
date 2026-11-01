@@ -4,6 +4,24 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 function app() {
+  if (process.env.NEXT_PUBLIC_C2_EMULATOR_MODE === "true") {
+    const expected = {
+      GCLOUD_PROJECT: "demo-motuka-c2",
+      GOOGLE_CLOUD_PROJECT: "demo-motuka-c2",
+      FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099",
+      FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080",
+    };
+    for (const [key, value] of Object.entries(expected)) {
+      if (process.env[key] !== value) {
+        throw new Error(`C2 emulator isolation failed: ${key}`);
+      }
+    }
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      throw new Error("C2 emulator isolation failed: service credentials are forbidden");
+    }
+    if (getApps().length) return getApps()[0];
+    return initializeApp({ projectId: "demo-motuka-c2" });
+  }
   if (getApps().length) return getApps()[0];
   const json = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (json) return initializeApp({ credential: cert(JSON.parse(json)) });
