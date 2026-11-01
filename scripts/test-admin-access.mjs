@@ -24,6 +24,19 @@ if (url.username || url.password || url.pathname !== "/" || url.search || url.ha
   process.exit(2);
 }
 const cases = [
+  // C2 commissionnaire routes: read-only requests or authorization-denied writes.
+  { name: "C2 no token / applications", path: "/api/admin/partner-applications", token: null, expected: 401 },
+  { name: "C2 invalid token / applications", path: "/api/admin/partner-applications", token: "invalid-token", expected: 401 },
+  { name: "C2 user / applications", path: "/api/admin/partner-applications", token: tokens.user, expected: 403 },
+  { name: "C2 manager / applications", path: "/api/admin/partner-applications?limit=1", token: tokens.manager, expected: 200, hideC2Phone: true },
+  { name: "C2 admin / applications", path: "/api/admin/partner-applications?limit=1", token: tokens.admin, expected: 200 },
+  { name: "C2 manager invalid limit", path: "/api/admin/partner-applications?limit=0", token: tokens.manager, expected: 400 },
+  { name: "C2 manager invalid status", path: "/api/admin/partner-applications?status=invalid", token: tokens.manager, expected: 400 },
+  { name: "C2 no token / detail", path: "/api/admin/partner-applications/smoke-test", token: null, expected: 401 },
+  { name: "C2 user / detail", path: "/api/admin/partner-applications/smoke-test", token: tokens.user, expected: 403 },
+  { name: "C2 no token / decision", path: "/api/admin/partner-applications/smoke-test/decision", method: "POST", token: null, body: { action: "approve", expectedVersion: 0 }, expected: 401 },
+  { name: "C2 user / decision", path: "/api/admin/partner-applications/smoke-test/decision", method: "POST", token: tokens.user, body: { action: "approve", expectedVersion: 0 }, expected: 403 },
+  { name: "C2 manager / decision", path: "/api/admin/partner-applications/smoke-test/decision", method: "POST", token: tokens.manager, body: { action: "approve", expectedVersion: 0 }, expected: 403 },
   { name: "No token / users", path: "/api/admin/users", token: null, expected: 401 },
   { name: "Invalid token / users", path: "/api/admin/users", token: "invalid-token", expected: 401 },
   { name: "User / users", path: "/api/admin/users", token: tokens.user, expected: 403 },
@@ -50,6 +63,12 @@ for (const test of cases) {
       signal: AbortSignal.timeout(15000),
     });
     let ok = response.status === test.expected;
+    if (ok && test.hideC2Phone) {
+      const payload = await response.json();
+      ok = Array.isArray(payload.applications)
+        && payload.applications.every(row => !Object.hasOwn(row, "phone"))
+        && response.headers.get("cache-control")?.includes("no-store") === true;
+    }
     if (ok && test.hidePhone) {
       const payload = await response.json();
       const records = test.path.endsWith("partners") ? payload.partners : payload.users;
