@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import { adminApi } from "@/lib/client/admin-api";
 
 const statusLabels = { pending: "En attente", approved: "Approuvée", rejected: "Refusée" };
@@ -16,6 +16,7 @@ export default function PartnerApplicationsPage() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [error, setError] = useState("");
   const [reason, setReason] = useState("");
   const [deciding, setDeciding] = useState(false);
@@ -51,6 +52,7 @@ export default function PartnerApplicationsPage() {
   };
 
   const decide = async (action) => {
+    setConfirmAction(null);
     if (!selected?.canDecide || deciding) return;
     if (action === "reject" && !reason.trim()) { setError("Le motif du refus est obligatoire."); return; }
     setDeciding(true);
@@ -71,6 +73,7 @@ export default function PartnerApplicationsPage() {
     setError("");
     try {
       setSelected(null);
+      setConfirmAction(null);
       setReason("");
       const result = await adminApi("/api/admin/partner-applications/" + encodeURIComponent(uid));
       setSelected(result);
@@ -148,13 +151,23 @@ export default function PartnerApplicationsPage() {
               <Alert severity="warning" sx={{ mb: 2 }}>Actions réservées aux administrateurs. Ne pas traiter de candidatures réelles avant autorisation.</Alert>
               <TextField fullWidth multiline minRows={2} label="Motif du refus" value={reason} onChange={e => setReason(e.target.value)} slotProps={{ htmlInput: { maxLength: 1000 } }} sx={{ mb: 2 }} />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                <Button variant="contained" disabled={deciding} onClick={() => decide("approve")}>Approuver</Button>
-                <Button variant="outlined" color="error" disabled={deciding || !reason.trim()} onClick={() => decide("reject")}>Refuser avec motif</Button>
+                <Button variant="contained" disabled={deciding} onClick={() => setConfirmAction("approve")}>Approuver</Button>
+                <Button variant="outlined" color="error" disabled={deciding || !reason.trim()} onClick={() => setConfirmAction("reject")}>Refuser avec motif</Button>
               </Stack>
             </Box>
           )}
         </Paper>
       )}
+      <Dialog open={confirmAction !== null} onClose={() => !deciding && setConfirmAction(null)}>
+        <DialogTitle>Confirmer la décision</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmAction === "approve" ? "Approuver cette candidature et activer le droit commissionnaire ?" : "Refuser cette candidature avec le motif renseigné ?"}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={deciding} onClick={() => setConfirmAction(null)}>Annuler</Button>
+          <Button disabled={deciding} color={confirmAction === "reject" ? "error" : "primary"} onClick={() => decide(confirmAction)}>Confirmer</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
