@@ -64,6 +64,15 @@ try {
   });
   if (result.status !== 0) throw Error(`C2 HTTP smoke test failed: ${result.status}`);
   console.log("C2 HTTP smoke test PASS (isolated Auth and Firestore emulators)");
+  const writeTests = spawnSync(process.execPath, ["scripts/test-c2-decisions-http.mjs"], {
+    env: {
+      ...process.env,
+      ADMIN_BASE_URL: "http://127.0.0.1:3100/",
+      ADMIN_ID_TOKEN: admin,
+    },
+    stdio: "inherit", timeout: 120000,
+  });
+  if (writeTests.status !== 0) throw Error(`C2 write-path HTTP tests failed: ${writeTests.status}`);
 } finally {
   // npm run dev creates a child shell and a Next.js process. Terminate the entire
   // isolated process group, not just npm, or emulators:exec can hang indefinitely.
