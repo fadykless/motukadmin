@@ -36,7 +36,7 @@ const [admin, manager, user] = await Promise.all([
   token("c2-test-admin"), token("c2-test-manager"), token("c2-test-user"),
 ]);
 const server = spawn("npm", ["run", "dev", "--", "--hostname", "127.0.0.1", "--port", "3100"], {
-  env: process.env, stdio: ["ignore", "pipe", "pipe"],
+  env: process.env, stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32",
 });
 let output = "";
 server.stdout.on("data", chunk => { output = (output + chunk.toString()).slice(-5000); });
@@ -65,5 +65,16 @@ try {
   if (result.status !== 0) throw Error(`C2 HTTP smoke test failed: ${result.status}`);
   console.log("C2 HTTP smoke test PASS (isolated Auth and Firestore emulators)");
 } finally {
-  server.kill("SIGTERM");
+  // npm run dev creates a child shell and a Next.js process. Terminate the entire
+  // isolated process group, not just npm, or emulators:exec can hang indefinitely.
+  if (process.platform !== "win32" && server.pid) {
+    try { process.kill(-server.pid, "SIGTERM"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+  } else if (server.exitCode === null) {
+    server.kill("SIGTERM");
+  }
+  await Promise.race([new Promise(resolve => server.once("close", resolve)), sleep(5000)]);
+  if (process.platform !== "win32" && server.pid) {
+    try { process.kill(-server.pid, 0); process.kill(-server.pid, "SIGKILL"); }
+    catch (error) { if (error.code !== "ESRCH") throw error; }
+  }
 }
