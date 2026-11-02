@@ -80,7 +80,7 @@ jobs:
 
   c2-ui:
     name: C2 browser acceptance — fictional emulators
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
