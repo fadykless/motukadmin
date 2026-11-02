@@ -27,6 +27,7 @@ async function scenario(role, width) {
     await page.getByRole("textbox", { name: "Email" }).fill(`c2-test-${role}@example.test`);
     await page.getByLabel("Mot de passe").fill("LocalDemoOnly-123456");
     await page.getByRole("button", { name: "Connexion", exact: true }).click();
+    await page.waitForURL("**/dashboard", { timeout: 20000 });
     await page.goto("/partenaires/candidatures", { waitUntil: "domcontentloaded" });
     await page.getByText("Candidatures commissionnaires").waitFor({ timeout: 20000 });
     await page.getByText("Candidate C2 (fictional)").first().waitFor({ timeout: 20000 });
