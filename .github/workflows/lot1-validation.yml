@@ -62,6 +62,7 @@ jobs:
         run: |
           npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/seed-c2-emulator.mjs'
       - name: C2 isolated HTTP authorization smoke tests
+        timeout-minutes: 5
         env:
           GCLOUD_PROJECT: demo-motuka-c2
           GOOGLE_CLOUD_PROJECT: demo-motuka-c2
