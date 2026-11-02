@@ -74,6 +74,53 @@ test("blocked account cannot be approved and produces no history", async () => {
   assert.equal(history.size, 0);
 });
 
+test("rejection preserves partner flag and creates exactly one decision event", async () => {
+  await application.set({ userId: uid, status: "pending", decisionVersion: 0 });
+  await user.set({ isPartner: false, status: "active" });
+  const existing = await application.collection("history").get();
+  const cleanup = db.batch();
+  existing.docs.forEach(doc => cleanup.delete(doc.ref));
+  await cleanup.commit();
+
+  await decide(0, "rejected");
+  const [a, u, history] = await Promise.all([
+    application.get(), user.get(), application.collection("history").get(),
+  ]);
+  assert.equal(a.data().status, "rejected");
+  assert.equal(a.data().decisionVersion, 1);
+  assert.equal(u.data().isPartner, false);
+  assert.equal(history.size, 1);
+  assert.equal(history.docs[0].data().action, "rejected");
+  await assert.rejects(() => decide(0, "approved"));
+  assert.equal((await application.collection("history").get()).size, 1);
+});
+
+test("audit history query selects newest events when more than 100 exist", async () => {
+  const audit = db.collection("partnerAuditEvents");
+  const auditUid = uid + "-audit";
+  const batch = db.batch();
+  for (let i = 0; i < 120; i++) {
+    batch.set(audit.doc(auditUid + "-" + String(i).padStart(3, "0")), {
+      uid: auditUid,
+      action: "test",
+      createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)),
+    });
+  }
+  await batch.commit();
+  try {
+    const recent = await audit.where("uid", "==", auditUid)
+      .orderBy("createdAt", "desc").limit(50).get();
+    assert.equal(recent.size, 50);
+    assert.equal(recent.docs[0].id, auditUid + "-119");
+    assert.equal(recent.docs[49].id, auditUid + "-070");
+  } finally {
+    const docs = await audit.where("uid", "==", auditUid).get();
+    const cleanup = db.batch();
+    docs.docs.forEach(doc => cleanup.delete(doc.ref));
+    await cleanup.commit();
+  }
+});
+
 test.after(async () => {
   const history = await application.collection("history").get();
   const batch = db.batch();

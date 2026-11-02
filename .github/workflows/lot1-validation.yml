@@ -5,6 +5,7 @@ on:
     branches:
       - feature/admin-security-partners
       - feature/commissionnaire-c2-admin
+      - fix/c2-audit-history-pagination
   pull_request:
     branches:
       - main
@@ -31,6 +32,12 @@ jobs:
         run: npm run lint
       - name: Validate security smoke-test script syntax
         run: node --check scripts/test-admin-access.mjs
+      - name: Validate fictional emulator seed syntax
+        run: node --check scripts/seed-c2-emulator.mjs
+      - name: C2 emulator safety guard tests (no network)
+        run: node --test tests/c2EmulatorSafety.test.mjs
+      - name: C2 HTTP smoke safety guard tests (no network)
+        run: node --test tests/c2HttpSmokeSafety.test.mjs
       - name: C2 decision policy unit tests
         run: node --test tests/partnerDecisionPolicy.test.mjs
       - name: Validate C2 emulator test syntax (no production connection)
@@ -46,7 +53,71 @@ jobs:
         run: |
           printf '{"emulators":{"firestore":{"host":"127.0.0.1","port":8080},"ui":{"enabled":false}}}\n' > /tmp/motuka-c2-firebase.json
           npx --yes firebase-tools@14 emulators:exec --config /tmp/motuka-c2-firebase.json --only firestore --project demo-motuka-c2 'node --test tests/partnerDecisionEmulator.test.mjs'
+      - name: C2 fictional accounts seed in isolated Auth and Firestore emulators
+        env:
+          GCLOUD_PROJECT: demo-motuka-c2
+          GOOGLE_CLOUD_PROJECT: demo-motuka-c2
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/seed-c2-emulator.mjs'
+      - name: Validate C2 write-path HTTP test syntax
+        run: node --check scripts/test-c2-decisions-http.mjs
+      - name: C2 isolated HTTP authorization smoke tests
+        timeout-minutes: 5
+        env:
+          GCLOUD_PROJECT: demo-motuka-c2
+          GOOGLE_CLOUD_PROJECT: demo-motuka-c2
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          NEXT_PUBLIC_C2_EMULATOR_MODE: 'true'
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/run-c2-local-http.mjs'
       - name: Build
         run: npm run build
         env:
           CI: 'true'
+
+  c2-ui:
+    name: C2 browser acceptance — fictional emulators
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Setup Java for Firestore Emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install application dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install isolated Playwright runtime
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Validate C2 browser test syntax
+        run: node --check scripts/test-c2-ui.mjs
+      - name: Run isolated browser acceptance — desktop and mobile
+        timeout-minutes: 9
+        env:
+          GCLOUD_PROJECT: demo-motuka-c2
+          GOOGLE_CLOUD_PROJECT: demo-motuka-c2
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          NEXT_PUBLIC_C2_EMULATOR_MODE: 'true'
+          C2_RUN_BROWSER_UI: 'true'
+        run: |
+          npx --yes firebase-tools@14 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'node scripts/run-c2-local-http.mjs'
+      - name: Publish UI evidence screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c2-ui-browser-evidence
+          path: artifacts/c2-ui/
+          if-no-files-found: warn
