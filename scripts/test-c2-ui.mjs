@@ -41,7 +41,7 @@ async function scenario(role, width) {
       await approve.click();
       await page.getByText("Confirmer la décision").waitFor();
       await page.getByRole("button", { name: "Annuler" }).click();
-      assert.equal(await page.getByText("Confirmer la décision").count(), 0, "Cancel closes dialog");
+      await page.getByRole("dialog").waitFor({ state: "hidden", timeout: 5000 });
       assert.equal(await approve.isVisible(), true, "Cancel must preserve pending decision");
       assert.equal(await page.getByRole("button", { name: "Refuser avec motif" }).isDisabled(), true);
     }
