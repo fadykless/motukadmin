@@ -64,6 +64,12 @@ try {
   });
   if (result.status !== 0) throw Error(`C2 HTTP smoke test failed: ${result.status}`);
   console.log("C2 HTTP smoke test PASS (isolated Auth and Firestore emulators)");
+  if (process.env.C2_RUN_BROWSER_UI === "true") {
+    const browserTests = spawnSync(process.execPath, ["scripts/test-c2-ui.mjs"], {
+      env: process.env, stdio: "inherit", timeout: 240000,
+    });
+    if (browserTests.status !== 0) throw Error(`C2 browser UI failed: ${browserTests.status}`);
+  }
   const writeTests = spawnSync(process.execPath, ["scripts/test-c2-decisions-http.mjs"], {
     env: {
       ...process.env,
