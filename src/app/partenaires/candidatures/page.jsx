@@ -145,7 +145,7 @@ export default function PartnerApplicationsPage() {
               {!selected.application.termsDocumentSha256 && <Alert severity="warning">Empreinte documentaire absente : vérifier la traçabilité avant décision.</Alert>}
             </Stack>
           ) : (
-            <Alert severity="info" sx={{ mt: 1 }}>Preuve d'acceptation versionnée non disponible dans ce dossier. Vérifier s'il s'agit d'une candidature antérieure à la version 1.0.</Alert>
+            <Alert severity="info" sx={{ mt: 1 }}>Preuve d&apos;acceptation versionnée non disponible dans ce dossier. Vérifier s&apos;il s&apos;agit d&apos;une candidature antérieure à la version 1.0.</Alert>
           )}
           {(selected.application.motivation || selected.application.experience) && (
             <Stack spacing={1} sx={{ mt: 2 }}>
