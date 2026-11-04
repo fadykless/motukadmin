@@ -35,6 +35,10 @@ export async function GET(request, context) {
         submittedAt: data.createdAt?.toDate?.()?.toISOString() || null,
         reviewedAt: data.reviewedAt?.toDate?.()?.toISOString() || null,
         decisionVersion: Number.isInteger(data.decisionVersion) ? data.decisionVersion : 0,
+        termsVersion: typeof data.termsVersion === "string" ? data.termsVersion : null,
+        termsAcceptedAt: data.termsAcceptedAt?.toDate?.()?.toISOString() || null,
+        termsDocumentSha256: typeof data.termsDocumentSha256 === "string" ? data.termsDocumentSha256 : null,
+        termsAcceptanceMethod: typeof data.termsAcceptanceMethod === "string" ? data.termsAcceptanceMethod : null,
         ...(actor.role === "admin" ? { phone: data.phone || "", rejectionReason: data.rejectionReason || null } : {}),
       },
       partner: {
