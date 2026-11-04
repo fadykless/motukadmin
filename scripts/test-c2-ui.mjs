@@ -33,6 +33,14 @@ async function scenario(role, width) {
     await page.getByText("Candidate C2 (fictional)").first().waitFor({ timeout: 20000 });
     await page.getByRole("button", { name: "Consulter" }).first().click();
     await page.getByText("Dossier : Candidate C2 (fictional)").waitFor({ timeout: 15000 });
+    await page.getByText("Consentement aux Termes & Conditions").waitFor();
+    await page.getByText("1.0", { exact: true }).waitFor();
+    await page.getByText(/04\\/11\\/2026/).waitFor();
+    await page.getByText("a".repeat(64), { exact: false }).waitFor();
+    assert.equal(await page.getByText("Motivation", { exact: true }).count(), 0,
+      "The new application must not show legacy motivation field");
+    assert.equal(await page.getByText("Expérience", { exact: true }).count(), 0,
+      "The new application must not show legacy experience field");
     const approve = page.getByRole("button", { name: "Approuver", exact: true });
     if (role === "manager") {
       assert.equal(await approve.count(), 0, "Managers must not see admin-only decisions");
