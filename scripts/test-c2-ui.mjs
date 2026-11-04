@@ -34,7 +34,7 @@ async function scenario(role, width) {
     await page.getByRole("button", { name: "Consulter" }).first().click();
     await page.getByText("Dossier : Candidate C2 (fictional)").waitFor({ timeout: 15000 });
     await page.getByText("Consentement aux Termes & Conditions").waitFor();
-    await page.getByText("1.0", { exact: true }).waitFor();
+    await page.getByText(/Version\s*:\s*1\.0/).waitFor();
     await page.getByText(/04\\/11\\/2026/).waitFor();
     await page.getByText("a".repeat(64), { exact: false }).waitFor();
     assert.equal(await page.getByText("Motivation", { exact: true }).count(), 0,
