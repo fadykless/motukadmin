@@ -35,7 +35,7 @@ async function scenario(role, width) {
     await page.getByText("Dossier : Candidate C2 (fictional)").waitFor({ timeout: 15000 });
     await page.getByText("Consentement aux Termes & Conditions").waitFor();
     await page.getByText(/Version\s*:\s*1\.0/).waitFor();
-    await page.getByText(/04\\/11\\/2026/).waitFor();
+    await page.getByText("04/11/2026", { exact: false }).waitFor();
     await page.getByText("a".repeat(64), { exact: false }).waitFor();
     assert.equal(await page.getByText("Motivation", { exact: true }).count(), 0,
       "The new application must not show legacy motivation field");
