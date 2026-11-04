@@ -50,6 +50,10 @@ await db.collection("partnerApplications").doc("c2-test-candidate").set({
   phone: "000000000",
   status: "pending",
   decisionVersion: 0,
+  termsVersion: "1.0",
+  termsAcceptedAt: new Date("2026-11-04T09:15:00.000Z"),
+  termsDocumentSha256: "a".repeat(64),
+  termsAcceptanceMethod: "authenticated_checkbox",
   createdAt: new Date(),
   isTestApplication: true,
 });
