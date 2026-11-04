@@ -78,6 +78,10 @@ for (const test of cases) {
       const payload = await response.json();
       ok = payload.canDecide === false
         && payload.application?.uid === "c2-test-candidate"
+        && payload.application.termsVersion === "1.0"
+        && payload.application.termsAcceptedAt === "2026-11-04T09:15:00.000Z"
+        && payload.application.termsDocumentSha256 === "a".repeat(64)
+        && payload.application.termsAcceptanceMethod === "authenticated_checkbox"
         && !Object.hasOwn(payload.application, "phone")
         && !Object.hasOwn(payload.application, "rejectionReason")
         && Array.isArray(payload.history)
@@ -88,6 +92,10 @@ for (const test of cases) {
       const payload = await response.json();
       ok = payload.canDecide === true
         && payload.application?.uid === "c2-test-candidate"
+        && payload.application.termsVersion === "1.0"
+        && payload.application.termsAcceptedAt === "2026-11-04T09:15:00.000Z"
+        && payload.application.termsDocumentSha256 === "a".repeat(64)
+        && payload.application.termsAcceptanceMethod === "authenticated_checkbox"
         && Object.hasOwn(payload.application, "phone")
         && response.headers.get("cache-control")?.includes("no-store") === true;
     }
