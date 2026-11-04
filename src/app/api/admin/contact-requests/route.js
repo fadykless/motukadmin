@@ -1,0 +1,90 @@
+import { eligibleProspect } from "@/lib/server/prospect-eligibility.mjs";
+import { cursorMatchesFilters } from "@/lib/server/prospect-cursor.mjs";
+import { validDate } from "@/lib/server/prospect-dates.mjs";
+import { adminDb, requireStaff, fail, HttpError } from "@/lib/server/admin";
+
+export const runtime = "nodejs";
+
+const STATUSES = new Set(["new", "contacted", "qualified", "in_progress", "closed"]);
+const validId = value => typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+
+export async function GET(request) {
+  try {
+    await requireStaff(request);
+    const params = new URL(request.url).searchParams;
+    const status = params.get("status");
+    const commissionnaireId = params.get("commissionnaireId");
+    const productId = params.get("productId");
+    const assignedTo = params.get("assignedTo");
+    const from = params.get("from");
+    const to = params.get("to");
+    const cursor = params.get("cursor");
+    const limit = Number(params.get("limit") || 20);
+
+    if (status && !STATUSES.has(status)) throw new HttpError(400, "Statut invalide");
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new HttpError(400, "Pagination invalide");
+    for (const value of [commissionnaireId, productId, assignedTo, cursor]) {
+      if (value !== null && !validId(value)) throw new HttpError(400, "Identifiant de filtre invalide");
+    }
+    for (const value of [from, to]) {
+      if (value !== null && !validDate(value)) throw new HttpError(400, "Date invalide");
+    }
+    if (from && to && from > to) throw new HttpError(400, "Période invalide");
+
+    const db = adminDb();
+    let query = db.collection("contactRequests").where("contactChannel", "==", "motuka");
+    if (status) query = query.where("status", "==", status);
+    if (commissionnaireId) query = query.where("commissionnaireId", "==", commissionnaireId);
+    if (productId) query = query.where("productId", "==", productId);
+    if (assignedTo) query = query.where("assignedTo", "==", assignedTo);
+    if (from) query = query.where("createdAt", ">=", new Date(from + "T00:00:00.000Z"));
+    if (to) query = query.where("createdAt", "<", new Date(Date.parse(to + "T00:00:00.000Z") + 86400000));
+    query = query.orderBy("createdAt", "desc").orderBy("__name__", "desc");
+    if (cursor) {
+      const cursorDoc = await db.collection("contactRequests").doc(cursor).get();
+      if (!cursorDoc.exists || !cursorDoc.get("createdAt")) throw new HttpError(400, "Curseur invalide");
+      if (!cursorMatchesFilters(cursorDoc.data(), { status, commissionnaireId, productId, assignedTo, from, to })) {
+        throw new HttpError(400, "Curseur incompatible avec les filtres");
+      }
+      query = query.startAfter(cursorDoc);
+    }
+
+    const items = [];
+    let last = null;
+    let exhausted = false;
+    for (let batchNumber = 0; batchNumber < 10 && items.length < limit; batchNumber++) {
+      const snap = await query.limit(50).get();
+      if (snap.empty) { exhausted = true; break; }
+      const ids = [...new Set(snap.docs.map(doc => doc.get("productId")).filter(validId))];
+      const products = ids.length ? await db.getAll(...ids.map(id => db.collection("products").doc(id))) : [];
+      const byId = new Map(products.map(doc => [doc.id, doc.exists ? doc.data() : null]));
+      const partnerIds = [...new Set(snap.docs.map(doc => doc.get("commissionnaireId")).filter(validId))];
+      const partners = partnerIds.length ? await db.getAll(...partnerIds.map(id => db.collection("users").doc(id))) : [];
+      const byPartner = new Map(partners.map(doc => [doc.id, doc.exists ? doc.data() : null]));
+      let inspected = 0;
+      for (const doc of snap.docs) {
+        inspected++;
+        last = doc;
+        const value = doc.data();
+        const product = byId.get(value.productId);
+        if (!eligibleProspect(value, product, byPartner.get(value.commissionnaireId))) continue;
+        items.push({
+          id: doc.id,
+          productId: value.productId,
+          productName: typeof product.name === "string" ? product.name : "",
+          buyerId: value.buyerId || null,
+          commissionnaireId: value.commissionnaireId,
+          status: value.status || "new",
+          assignedTo: value.assignedTo || null,
+          createdAt: value.createdAt?.toDate?.()?.toISOString() || null
+        });
+        if (items.length === limit) break;
+      }
+      if (snap.size < 50 && inspected === snap.size) { exhausted = true; break; }
+      query = query.startAfter(last);
+    }
+    return Response.json({ items, nextCursor: exhausted || !last ? null : last.id });
+  } catch (error) {
+    return fail(error);
+  }
+}
