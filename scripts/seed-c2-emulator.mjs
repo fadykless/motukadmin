@@ -44,7 +44,7 @@ for (const [uid, role] of actors) {
   });
 }
 await db.collection("partnerApplications").doc("c2-test-candidate").set({
-  uid: "c2-test-candidate",
+  userId: "c2-test-candidate",
   fullName: "Candidate C2 (fictional)",
   city: "Demo",
   phone: "000000000",
@@ -57,6 +57,18 @@ await db.collection("partnerApplications").doc("c2-test-candidate").set({
   createdAt: new Date(),
   isTestApplication: true,
 });
+// Historical records deliberately have no invented consent or profile.
+for (const [uid, name, consent] of [
+  ["c2-test-legacy", "Legacy C2 (fictional)", {}],
+  ["c2-test-partial", "Partial C2 (fictional)", { termsDocumentSha256: "b".repeat(64) }],
+]) {
+  await db.collection("partnerApplications").doc(uid).set({
+    userId: uid, fullName: name, city: "Demo", phone: "000000000",
+    status: "pending", createdAt: new Date("2026-10-01T00:00:00Z"),
+    motivation: "Historical motivation", experience: "Historical experience",
+    isTestApplication: true, ...consent,
+  });
+}
 for (const [uid, role] of actors) {
   const [account, profile] = await Promise.all([
     auth.getUser(uid),
@@ -74,5 +86,5 @@ if (!seededApplication.exists || seededApplication.data().status !== "pending" |
     seededApplication.data().isTestApplication !== true) {
   throw new Error("Seed verification failed for fictional pending application");
 }
-console.log("Seeded 5 fictional Auth users and 1 pending application in local emulators only.");
+console.log("Seeded 5 fictional Auth users and 3 pending applications in local emulators only.");
 console.log("Use Firebase Auth Emulator REST signInWithPassword to obtain ID tokens; never use real tokens.");

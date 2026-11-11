@@ -63,6 +63,15 @@ const cases = [
   { name: "User cannot update products", path: "/api/admin/products", method: "PATCH", token: tokens.user, body: { ids: ["smoke-test"], status: "hidden" }, expected: 403 },
   { name: "Manager cannot archive products", path: "/api/admin/products", method: "DELETE", token: tokens.manager, body: { ids: ["smoke-test"] }, expected: 403 },
 ];
+// Fixtures are available only in the guarded local demo recipe.
+if (localMode) {
+  for (const role of ["admin", "manager"]) {
+    for (const kind of ["legacy", "partial"]) cases.push({
+      name: `C2 ${role} / ${kind} consent`, path: `/api/admin/partner-applications/c2-test-${kind}`,
+      token: tokens[role], expected: 200, consentFixture: kind,
+    });
+  }
+}
 let failures = 0;
 for (const test of cases) {
   try {
@@ -98,6 +107,17 @@ for (const test of cases) {
         && payload.application.termsAcceptanceMethod === "authenticated_checkbox"
         && Object.hasOwn(payload.application, "phone")
         && response.headers.get("cache-control")?.includes("no-store") === true;
+    }
+    if (ok && test.consentFixture) {
+      const payload = await response.json();
+      ok = payload.application.termsVersion === null
+        && payload.application.termsAcceptedAt === null
+        && payload.application.termsAcceptanceMethod === null
+        && payload.application.termsDocumentSha256 === (test.consentFixture === "partial" ? "b".repeat(64) : null)
+        && payload.application.motivation === "Historical motivation"
+        && payload.application.experience === "Historical experience"
+        && payload.partner.isPartner === false
+        && payload.partner.profileExists === false;
     }
     if (ok && test.verifyC2Pagination) {
       const payload = await response.json();

@@ -136,13 +136,13 @@ export default function PartnerApplicationsPage() {
           <Typography><strong>Compte :</strong> {selected.partner.accountStatus}</Typography>
           {selected.application.phone && <Typography><strong>Téléphone :</strong> {selected.application.phone}</Typography>}
           <Typography mt={3} fontWeight={700}>Consentement aux Termes & Conditions</Typography>
-          {selected.application.termsVersion && selected.application.termsAcceptedAt ? (
+          {(selected.application.termsVersion || selected.application.termsAcceptedAt || selected.application.termsDocumentSha256 || selected.application.termsAcceptanceMethod) ? (
             <Stack spacing={0.5} sx={{ mt: 1 }}>
-              <Typography><strong>Version :</strong> {selected.application.termsVersion}</Typography>
-              <Typography><strong>Accepté le :</strong> {new Date(selected.application.termsAcceptedAt).toLocaleString("fr-FR")}</Typography>
+              {selected.application.termsVersion && <Typography><strong>Version :</strong> {selected.application.termsVersion}</Typography>}
+              {selected.application.termsAcceptedAt && <Typography><strong>Accepté le :</strong> {new Date(selected.application.termsAcceptedAt).toLocaleString("fr-FR", { timeZone: "Africa/Kinshasa" })} (Kinshasa)</Typography>}
               {selected.application.termsAcceptanceMethod && <Typography><strong>Méthode :</strong> {selected.application.termsAcceptanceMethod === "authenticated_checkbox" ? "Acceptation explicite par compte authentifié" : selected.application.termsAcceptanceMethod}</Typography>}
               {selected.application.termsDocumentSha256 && <Typography variant="body2" sx={{ overflowWrap: "anywhere", fontFamily: "monospace" }}><strong>Empreinte SHA-256 :</strong> {selected.application.termsDocumentSha256}</Typography>}
-              {!selected.application.termsDocumentSha256 && <Alert severity="warning">Empreinte documentaire absente : vérifier la traçabilité avant décision.</Alert>}
+              {(!selected.application.termsVersion || !selected.application.termsAcceptedAt || !selected.application.termsDocumentSha256) && <Alert severity="warning">Preuve de consentement incomplète : vérifier la traçabilité avant décision.</Alert>}
             </Stack>
           ) : (
             <Alert severity="info" sx={{ mt: 1 }}>Preuve d&apos;acceptation versionnée non disponible dans ce dossier. Vérifier s&apos;il s&apos;agit d&apos;une candidature antérieure à la version 1.0.</Alert>
