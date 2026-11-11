@@ -33,6 +33,14 @@ async function scenario(role, width) {
     await page.getByText("Candidate C2 (fictional)").first().waitFor({ timeout: 20000 });
     await page.getByRole("button", { name: "Consulter" }).first().click();
     await page.getByText("Dossier : Candidate C2 (fictional)").waitFor({ timeout: 15000 });
+    await page.getByText("Consentement aux Termes & Conditions").waitFor();
+    await page.getByText(/Version\s*:\s*1\.0/).waitFor();
+    await page.getByText(/^Accepté le\s*:\s*04\/11\/2026/).waitFor();
+    await page.getByText("a".repeat(64), { exact: false }).waitFor();
+    assert.equal(await page.getByText("Motivation", { exact: true }).count(), 0,
+      "The new application must not show legacy motivation field");
+    assert.equal(await page.getByText("Expérience", { exact: true }).count(), 0,
+      "The new application must not show legacy experience field");
     const approve = page.getByRole("button", { name: "Approuver", exact: true });
     if (role === "manager") {
       assert.equal(await approve.count(), 0, "Managers must not see admin-only decisions");
@@ -52,6 +60,20 @@ async function scenario(role, width) {
     }));
     assert.ok(dimensions.documentWidth <= dimensions.viewportWidth + 1,
       `Horizontal overflow at ${role} ${width}: ${JSON.stringify(dimensions)}`);
+    for (const [name, message] of [
+      ["Legacy C2 (fictional)", "Preuve d'acceptation versionnée non disponible"],
+      ["Partial C2 (fictional)", "Preuve de consentement incomplète"],
+    ]) {
+      await page.getByRole("button", { name: "Fermer", exact: true }).click();
+      await page.getByText(name, { exact: true }).locator("xpath=../..").getByRole("button", { name: "Consulter" }).click();
+      await page.getByText(`Dossier : ${name}`, { exact: true }).waitFor();
+      await page.getByText(message, { exact: false }).waitFor();
+      await page.getByText("Historical motivation", { exact: false }).waitFor();
+      await page.getByText("Historical experience", { exact: false }).waitFor();
+      if (name.startsWith("Partial")) await page.getByText("b".repeat(64), { exact: false }).waitFor();
+      assert.equal(await page.getByText(/^Accepté le/).count(), 0, "No invented acceptance date");
+      await page.screenshot({ path: `artifacts/c2-ui/${name.split(" ")[0]}-${role}-${width}.png`, fullPage: true });
+    }
     console.log(`PASS C2 browser ${role} ${width}px, auth, detail, controls, responsive`);
   } finally {
     await context.close();
