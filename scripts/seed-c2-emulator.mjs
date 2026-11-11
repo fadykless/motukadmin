@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 // Seed fictitious C2 actors only in local Firebase Auth + Firestore emulators.
-import { initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
 
 const expected = {
   GCLOUD_PROJECT: "demo-motuka-c2",
@@ -20,6 +17,11 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_
   console.error("REFUSED: production-capable credentials are not permitted.");
   process.exit(2);
 }
+// Load Firebase only after every isolation guard has passed.
+// Refused invocations must not initialize or even require a production-capable SDK.
+const { initializeApp } = await import("firebase-admin/app");
+const { getAuth } = await import("firebase-admin/auth");
+const { getFirestore } = await import("firebase-admin/firestore");
 const app = initializeApp({ projectId: expected.GCLOUD_PROJECT });
 const auth = getAuth(app);
 const db = getFirestore(app);
