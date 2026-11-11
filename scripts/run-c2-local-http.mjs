@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // End-to-end C2 authorization smoke test: isolated emulators only.
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 const required = {
   GCLOUD_PROJECT: "demo-motuka-c2",
@@ -15,7 +15,16 @@ for (const [key, value] of Object.entries(required)) {
 if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   throw Error("Service credentials forbidden in isolated C2 recipe");
 }
-const seed = spawnSync(process.execPath, ["scripts/seed-c2-emulator.mjs"], {
+// Keep draining the Next stdout/stderr pipes while test children run. Blocking
+// spawnSync can fill those pipes and deadlock the server on verbose failures.
+function runChild(command, args, options) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, options);
+    child.once("error", reject);
+    child.once("close", (status, signal) => resolve({ status, signal }));
+  });
+}
+const seed = await runChild(process.execPath, ["scripts/seed-c2-emulator.mjs"], {
   stdio: "inherit", env: process.env, timeout: 30000,
 });
 if (seed.status !== 0) throw Error(`C2 seed failed: ${seed.status}`);
@@ -52,7 +61,7 @@ try {
     await sleep(1000);
   }
   if (!ready) throw Error(`Next server not ready: ${output}`);
-  const result = spawnSync(process.execPath, ["scripts/test-admin-access.mjs"], {
+  const result = await runChild(process.execPath, ["scripts/test-admin-access.mjs"], {
     env: {
       ...process.env,
       ADMIN_BASE_URL: "http://127.0.0.1:3100/",
@@ -65,12 +74,12 @@ try {
   if (result.status !== 0) throw Error(`C2 HTTP smoke test failed: ${result.status}`);
   console.log("C2 HTTP smoke test PASS (isolated Auth and Firestore emulators)");
   if (process.env.C2_RUN_BROWSER_UI === "true") {
-    const browserTests = spawnSync(process.execPath, ["scripts/test-c2-ui.mjs"], {
+    const browserTests = await runChild(process.execPath, ["scripts/test-c2-ui.mjs"], {
       env: process.env, stdio: "inherit", timeout: 240000,
     });
     if (browserTests.status !== 0) throw Error(`C2 browser UI failed: ${browserTests.status}`);
   }
-  const writeTests = spawnSync(process.execPath, ["scripts/test-c2-decisions-http.mjs"], {
+  const writeTests = await runChild(process.execPath, ["scripts/test-c2-decisions-http.mjs"], {
     env: {
       ...process.env,
       ADMIN_BASE_URL: "http://127.0.0.1:3100/",
@@ -79,6 +88,13 @@ try {
     stdio: "inherit", timeout: 120000,
   });
   if (writeTests.status !== 0) throw Error(`C2 write-path HTTP tests failed: ${writeTests.status}`);
+  const prospectTests = await runChild(process.execPath, ["scripts/test-prospects-decisions-http.mjs"], {
+    env: { ...process.env, ADMIN_BASE_URL: "http://127.0.0.1:3100/", ADMIN_ID_TOKEN: admin,
+      MANAGER_ID_TOKEN: manager, USER_ID_TOKEN: user },
+    stdio: "inherit", timeout: 120000,
+  });
+  if (prospectTests.status !== 0) throw Error(`Prospects HTTP tests failed: ${prospectTests.status}`);
+
 } finally {
   // npm run dev creates a child shell and a Next.js process. Terminate the entire
   // isolated process group, not just npm, or emulators:exec can hang indefinitely.
