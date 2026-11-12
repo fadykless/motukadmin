@@ -71,4 +71,50 @@ assert.equal((await request(foreignPath, admin)).status, 404);
 assert.equal((await request(foreignPath, admin, { status: "contacted", expectedVersion: 0 })).status, 409);
 assert.equal((await db.collection("contactRequests").doc("c2-test-foreign-prospect").collection("history").get()).size, 0);
 console.log("PASS out-of-scope prospect refused without mutation; partner-facing scope remains unimplemented");
+// Equal timestamps exercise the document-ID tiebreaker, not just date ordering.
+const pageIds = ["c2-test-page-a", "c2-test-page-b", "c2-test-page-c"];
+const batch = db.batch();
+for (const id of pageIds) batch.set(db.collection("contactRequests").doc(id), {
+  contactChannel: "motuka", productId: "c2-test-prospect-car", buyerId: "c2-test-user",
+  commissionnaireId: "c2-test-prospect-partner", assignedTo: "c2-test-admin",
+  status: "in_progress", createdAt: new Date("2026-11-10T12:00:00Z"),
+});
+// A newer out-of-scope document must not consume a visible page slot.
+batch.set(db.collection("contactRequests").doc("c2-test-page-invalid"), {
+  contactChannel: "motuka", productId: "c2-test-missing-car", buyerId: "c2-test-user",
+  commissionnaireId: "c2-test-prospect-partner", assignedTo: "c2-test-admin",
+  status: "in_progress", createdAt: new Date("2026-11-10T13:00:00Z"),
+});
+await batch.commit();
+const filters = "status=in_progress&productId=c2-test-prospect-car&commissionnaireId=c2-test-prospect-partner&assignedTo=c2-test-admin&from=2026-11-10&to=2026-11-10";
+for (const actor of [admin, manager]) {
+  const seen = [], cursors = new Set();
+  let cursor = null;
+  for (let page = 0; page < 5; page++) {
+    const response = await request(`/api/admin/contact-requests?${filters}&limit=1${cursor ? "&cursor=" + cursor : ""}`, actor);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("cache-control"), /no-store/);
+    const payload = await response.json();
+    assert.ok(payload.items.length <= 1);
+    seen.push(...payload.items.map(item => item.id));
+    if (!payload.nextCursor) break;
+    assert.equal(cursors.has(payload.nextCursor), false, "cursor must advance");
+    cursors.add(payload.nextCursor); cursor = payload.nextCursor;
+  }
+  assert.deepEqual(seen, [...pageIds].reverse(), "equal-date pages must neither duplicate nor skip documents");
+}
+const unfiltered = await request("/api/admin/contact-requests?status=in_progress&limit=2", admin);
+assert.equal(unfiltered.status, 200);
+assert.deepEqual((await unfiltered.json()).items.map(item => item.id), ["c2-test-page-c", "c2-test-page-b"]);
+for (const query of [
+  "limit=0", "limit=51", "from=2026-02-30", "from=2026-11-11&to=2026-11-10",
+  "cursor=c2-test-page-absent", "status=new&cursor=c2-test-page-a",
+  "from=2026-11-11&cursor=c2-test-page-a",
+]) assert.equal((await request("/api/admin/contact-requests?" + query, admin)).status, 400, query);
+const emptyResponse = await request("/api/admin/contact-requests?status=closed", manager);
+assert.equal(emptyResponse.status, 200);
+const emptyPage = await emptyResponse.json();
+assert.deepEqual(emptyPage.items, []);
+assert.equal(emptyPage.nextCursor, null);
+console.log("PASS legacy filters, same-timestamp pagination, excluded references, invalid cursors/dates and empty result");
 console.log("Prospects HTTP integration PASS (legacy fixture only; new referral contract not activated)");
