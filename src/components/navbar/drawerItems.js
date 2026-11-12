@@ -3,6 +3,7 @@ import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import FavoriteRoundedIcon from "@mui/icons-material/FavoriteRounded";
 import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
+import ContactPhoneRoundedIcon from "@mui/icons-material/ContactPhoneRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
@@ -52,6 +53,11 @@ export const menus = [
   {
     title: "BUSINESS",
     items: [
+      {
+        label: "Prospects",
+        icon: <ContactPhoneRoundedIcon sx={{ color: iconColor }} />,
+        href: "/prospects",
+      },
       {
         label: "Paiements",
         icon: <PaymentsRoundedIcon sx={{ color: iconColor }} />,

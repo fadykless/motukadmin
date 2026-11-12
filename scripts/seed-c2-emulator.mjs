@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 // Seed fictitious C2 actors only in local Firebase Auth + Firestore emulators.
-import { initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
 
 const expected = {
   GCLOUD_PROJECT: "demo-motuka-c2",
@@ -20,6 +17,11 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_
   console.error("REFUSED: production-capable credentials are not permitted.");
   process.exit(2);
 }
+// Load Firebase only after every isolation guard has passed.
+// Refused invocations must not initialize or even require a production-capable SDK.
+const { initializeApp } = await import("firebase-admin/app");
+const { getAuth } = await import("firebase-admin/auth");
+const { getFirestore } = await import("firebase-admin/firestore");
 const app = initializeApp({ projectId: expected.GCLOUD_PROJECT });
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -44,15 +46,31 @@ for (const [uid, role] of actors) {
   });
 }
 await db.collection("partnerApplications").doc("c2-test-candidate").set({
-  uid: "c2-test-candidate",
+  userId: "c2-test-candidate",
   fullName: "Candidate C2 (fictional)",
   city: "Demo",
   phone: "000000000",
   status: "pending",
   decisionVersion: 0,
+  termsVersion: "1.0",
+  termsAcceptedAt: new Date("2026-11-04T09:15:00.000Z"),
+  termsDocumentSha256: "a".repeat(64),
+  termsAcceptanceMethod: "authenticated_checkbox",
   createdAt: new Date(),
   isTestApplication: true,
 });
+// Historical records deliberately have no invented consent or profile.
+for (const [uid, name, consent] of [
+  ["c2-test-legacy", "Legacy C2 (fictional)", {}],
+  ["c2-test-partial", "Partial C2 (fictional)", { termsDocumentSha256: "b".repeat(64) }],
+]) {
+  await db.collection("partnerApplications").doc(uid).set({
+    userId: uid, fullName: name, city: "Demo", phone: "000000000",
+    status: "pending", createdAt: new Date("2026-10-01T00:00:00Z"),
+    motivation: "Historical motivation", experience: "Historical experience",
+    isTestApplication: true, ...consent,
+  });
+}
 for (const [uid, role] of actors) {
   const [account, profile] = await Promise.all([
     auth.getUser(uid),
@@ -70,5 +88,5 @@ if (!seededApplication.exists || seededApplication.data().status !== "pending" |
     seededApplication.data().isTestApplication !== true) {
   throw new Error("Seed verification failed for fictional pending application");
 }
-console.log("Seeded 5 fictional Auth users and 1 pending application in local emulators only.");
+console.log("Seeded 5 fictional Auth users and 3 pending applications in local emulators only.");
 console.log("Use Firebase Auth Emulator REST signInWithPassword to obtain ID tokens; never use real tokens.");

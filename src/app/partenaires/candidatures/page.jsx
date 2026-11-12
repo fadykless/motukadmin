@@ -135,10 +135,25 @@ export default function PartnerApplicationsPage() {
           <Typography><strong>Droit partenaire :</strong> {selected.partner.isPartner ? "Actif" : "Inactif"}</Typography>
           <Typography><strong>Compte :</strong> {selected.partner.accountStatus}</Typography>
           {selected.application.phone && <Typography><strong>Téléphone :</strong> {selected.application.phone}</Typography>}
-          <Typography mt={2} fontWeight={700}>Motivation</Typography>
-          <Typography sx={{ whiteSpace: "pre-wrap" }}>{selected.application.motivation || "Non renseignée"}</Typography>
-          <Typography mt={2} fontWeight={700}>Expérience</Typography>
-          <Typography sx={{ whiteSpace: "pre-wrap" }}>{selected.application.experience || "Non renseignée"}</Typography>
+          <Typography mt={3} fontWeight={700}>Consentement aux Termes & Conditions</Typography>
+          {(selected.application.termsVersion || selected.application.termsAcceptedAt || selected.application.termsDocumentSha256 || selected.application.termsAcceptanceMethod) ? (
+            <Stack spacing={0.5} sx={{ mt: 1 }}>
+              {selected.application.termsVersion && <Typography><strong>Version :</strong> {selected.application.termsVersion}</Typography>}
+              {selected.application.termsAcceptedAt && <Typography><strong>Accepté le :</strong> {new Date(selected.application.termsAcceptedAt).toLocaleString("fr-FR", { timeZone: "Africa/Kinshasa" })} (Kinshasa)</Typography>}
+              {selected.application.termsAcceptanceMethod && <Typography><strong>Méthode :</strong> {selected.application.termsAcceptanceMethod === "authenticated_checkbox" ? "Acceptation explicite par compte authentifié" : selected.application.termsAcceptanceMethod}</Typography>}
+              {selected.application.termsDocumentSha256 && <Typography variant="body2" sx={{ overflowWrap: "anywhere", fontFamily: "monospace" }}><strong>Empreinte SHA-256 :</strong> {selected.application.termsDocumentSha256}</Typography>}
+              {(!selected.application.termsVersion || !selected.application.termsAcceptedAt || !selected.application.termsDocumentSha256) && <Alert severity="warning">Preuve de consentement incomplète : vérifier la traçabilité avant décision.</Alert>}
+            </Stack>
+          ) : (
+            <Alert severity="info" sx={{ mt: 1 }}>Preuve d&apos;acceptation versionnée non disponible dans ce dossier. Vérifier s&apos;il s&apos;agit d&apos;une candidature antérieure à la version 1.0.</Alert>
+          )}
+          {(selected.application.motivation || selected.application.experience) && (
+            <Stack spacing={1} sx={{ mt: 2 }}>
+              <Typography fontWeight={700}>Informations historiques</Typography>
+              {selected.application.motivation && <Typography sx={{ whiteSpace: "pre-wrap" }}><strong>Motivation :</strong> {selected.application.motivation}</Typography>}
+              {selected.application.experience && <Typography sx={{ whiteSpace: "pre-wrap" }}><strong>Expérience :</strong> {selected.application.experience}</Typography>}
+            </Stack>
+          )}
           <Typography mt={3} fontWeight={700}>Historique</Typography>
           {selected.history.length === 0 ? <Typography color="text.secondary">Aucun événement enregistré.</Typography> : selected.history.map(event => (
             <Box key={event.id} sx={{ py: 1 }}>
@@ -148,7 +163,7 @@ export default function PartnerApplicationsPage() {
           ))}
           {selected.canDecide && selected.application.status === "pending" && (
             <Box sx={{ mt: 3 }}>
-              <Alert severity="warning" sx={{ mb: 2 }}>Actions réservées aux administrateurs. Ne pas traiter de candidatures réelles avant autorisation.</Alert>
+              <Alert severity="info" sx={{ mb: 2 }}>Décision réservée à un administrateur habilité. Vérifiez le dossier et le consentement avant approbation ou rejet.</Alert>
               <TextField fullWidth multiline minRows={2} label="Motif du refus" value={reason} onChange={e => setReason(e.target.value)} slotProps={{ htmlInput: { maxLength: 1000 } }} sx={{ mb: 2 }} />
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <Button variant="contained" disabled={deciding} onClick={() => setConfirmAction("approve")}>Approuver</Button>
