@@ -12,7 +12,11 @@
     "lint:whatsapp-queue": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs src/lib/server/whatsapp-queue-*.mjs src/app/api/admin/whatsapp-requests src/app/whatsapp-demandes/page.jsx scripts/test-whatsapp-queue-http.mjs tests/whatsappQueue.test.mjs",
     "test:whatsapp-integration:safety": "node --test tests/whatsappIntegrationSafety.test.mjs",
     "test:whatsapp-integration:http": "node scripts/test-whatsapp-integration-http.mjs",
-    "lint:whatsapp-integration": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-integration-guard.mjs scripts/test-whatsapp-integration-http.mjs tests/whatsappIntegrationSafety.test.mjs"
+    "lint:whatsapp-integration": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-integration-guard.mjs scripts/test-whatsapp-integration-http.mjs tests/whatsappIntegrationSafety.test.mjs",
+    "test:whatsapp-rules:install": "npm --prefix tests/whatsapp-rules ci --include=dev --ignore-scripts --no-audit --no-fund",
+    "test:whatsapp-rules:safety": "npm --prefix tests/whatsapp-rules run test:safety",
+    "test:whatsapp-rules": "npm --prefix tests/whatsapp-rules test",
+    "lint:whatsapp-rules": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-rules-guard.mjs tests/whatsapp-rules/tests/whatsappRulesSafety.test.mjs tests/whatsapp-rules/tests/whatsappClientRules.test.mjs"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^41.4.2",
