@@ -1,0 +1,33 @@
+{
+  "schema": "motuka.whatsapp.integration-sources.v1",
+  "marketplace": {
+    "repo": "fadykless/motuka",
+    "sha": "37741ef53cab91225dccaee7a33ed10836051647",
+    "files": {
+      "src/app/api/whatsapp/webhook/route.js": "1b9319d8722aab2ec6be2ab9b69a3c78fd6ecd1eb7d3e308f091791013e58cfe",
+      "src/lib/whatsapp/webhook.mjs": "003f81f482d2a5c6f0af73eed2ba9a8766a766314bbaad0349f6d6d0365a97aa",
+      "src/lib/whatsapp/security.mjs": "49dcb771a72d8e63acb63223d2c6ec25ee836d6d5faa4dace14d0c1d11699458",
+      "src/lib/whatsapp/firestoreStore.mjs": "51cb61919519bec64d2d03cdfc5cff2486cd873c3e7d8d6feca951bf7feff925",
+      "src/lib/whatsapp/deliveryFirestoreStore.mjs": "d62f79732ec9f66490cc12d72f9b1c99a47c807556b0fd20adc22cea83ca839f",
+      "src/lib/whatsapp/deliveryPolicy.mjs": "874e6146efea4a065ebdb559f046fe757114f568db47bc9afea7a8c3d633837a",
+      "src/lib/whatsapp/processor.mjs": "44e103194cf9678885db60c410cc0e124b172d5eb9b098b13613fe03dfd8740c",
+      "src/lib/whatsapp/outputFormatter.mjs": "b0c1eba69cca3cb4e2c6e219016d7075d249434d4d15879634d71a95e0d03e2b",
+      "src/lib/whatsapp/qualification.mjs": "a2dad4d432a25c21767fd4a94b170b57ee1e2134a1f8219ae04f56390bbb5a80",
+      "src/lib/whatsapp/dialogueQuestions.mjs": "e5077b81c2ca836f66c0a8f74804e20837ec2e28dc19c86a2a159e100b32138c",
+      "src/lib/whatsapp/catalog.mjs": "46fd0de506f646fe41a5c6fdabf85cfe67295912f062c0a51e61ca10f304d55e"
+    }
+  },
+  "admin": {
+    "repo": "fadykless/motukadmin",
+    "sha": "a89801947dbe39065476457cbb4cc7eb6debf5cd",
+    "files": {
+      "src/app/api/admin/whatsapp-requests/route.js": "dc87205fc69de00d88f8a4133c48c94cdda5924cef85b325729ab804b615e31a",
+      "src/app/api/admin/whatsapp-requests/[id]/route.js": "2a5ef383d027148e5389efae7103836f4ff4492f8bcbb35d7e3742402ac948da",
+      "src/lib/server/admin.js": "efd5e4df09a9d506bfc29712d82248a32ea4d5ac7283f6966266641a8e665063",
+      "src/lib/server/whatsapp-queue-runtime.mjs": "89ff19b4df8db89a11b45768135a85b69615418c42536330c640cb123482425d",
+      "src/lib/server/whatsapp-queue-handlers.mjs": "427f5cbb9e8521b2b4c81ee84716151ef95433fdee84826c225ea370a4eb319f",
+      "src/lib/server/whatsapp-queue-policy.mjs": "bb693b7979230d4fd0d1cbb408e3a22a3c4fea24f09b06002661d00a9a1e4269",
+      "src/lib/server/whatsapp-queue-store.mjs": "894cf5a6702075c4d026f53b8d3a45ba07167f0a8c88a74bf02522295abf83b2"
+    }
+  }
+}
