@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:whatsapp-queue": "node --test tests/whatsappQueue.test.mjs",
+    "test:whatsapp-queue:http": "node scripts/test-whatsapp-queue-http.mjs",
+    "lint:whatsapp-queue": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs src/lib/server/whatsapp-queue-*.mjs src/app/api/admin/whatsapp-requests src/app/whatsapp-demandes/page.jsx scripts/test-whatsapp-queue-http.mjs tests/whatsappQueue.test.mjs"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^41.4.2",
