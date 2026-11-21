@@ -67,6 +67,11 @@ export const menus = [
   {
     title: "INTELLIGENCE",
     items: [
+      ...(process.env.NEXT_PUBLIC_C2_EMULATOR_MODE === "true" ? [{
+        label: "Demandes WhatsApp (test)",
+        icon: <SupportAgentRoundedIcon sx={{ color: iconColor }} />,
+        href: "/whatsapp-demandes",
+      }] : []),
       {
         label: "Motuka AI",
         icon: <SmartToyRoundedIcon sx={{ color: iconColor }} />,

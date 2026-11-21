@@ -1,0 +1,19 @@
+{
+  "schema": "motuka.whatsapp.rules-proof.v1",
+  "marketplace": {
+    "repository": "fadykless/motuka",
+    "commit": "9dcd249187ca0209e5da6e3576a0a2be7f12c3ac",
+    "sourceRules": "firestore.rules",
+    "sourceConfig": "firebase.json",
+    "rulesSha256": "a86eeaba7048841218833e136bb362241b893029ae9e91eaecb5551ffd776dcd",
+    "configSha256": "0ac141de1e5ecb5d65e70a1e3ef23153d8cece324a10f3282b8094ee4f70b981"
+  },
+  "admin": {
+    "repository": "fadykless/motukadmin",
+    "commit": "682637a91b4c1d6e27cdd490d138d0e8d171be47",
+    "deploymentRulesFound": false,
+    "deploymentConfigFound": false,
+    "emulatorConfig": "firebase.c2.test.json",
+    "emulatorConfigSpecifiesRules": false
+  }
+}
