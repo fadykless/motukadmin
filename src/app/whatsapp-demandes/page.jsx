@@ -49,13 +49,13 @@ export default function WhatsAppRequestsPage() {
     {!busy && items.length === 0 && <Typography>Aucune demande de test active dans cette fenêtre.</Typography>}
     {items.map(item => <Paper key={item.id} sx={{p: 2, mb: 2}}>
       <Stack spacing={1}>
-        <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center"><Chip label={labels[item.state]} /><Typography variant="caption">Dossier {item.id}</Typography></Stack>
+        <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center"><Chip label={labels[item.state]} /><Typography variant="caption" sx={{minWidth: 0, overflowWrap: "anywhere"}}>Dossier {item.id}</Typography></Stack>
         <Typography>{item.context.scope === "selected" ? "Intention liée à une annonce" : item.context.scope === "selection_unavailable" ? "Intention générale : sélection devenue indisponible" : "Intention générale sans annonce"}</Typography>
         <Typography variant="body2">Besoin : {{sale: "Vente", rent: "Location", parts: "Pièces"}[item.context.criteria.type] || "À préciser"} · Ville : {item.context.criteria.city || "À préciser"} · Marque : {item.context.criteria.brand || "À préciser"}</Typography>
         <Typography variant="body2">Budget maximum : {item.context.criteria.budgetMax ?? "À préciser"} {item.context.criteria.currency || ""}{item.context.criteria.rentType ? " / " + ({day: "jour", week: "semaine", month: "mois"}[item.context.criteria.rentType]) : ""}</Typography>
         {item.context.offer && <Typography>{item.context.offer.type} · {item.context.offer.price} {item.context.offer.currency}{item.context.offer.rentType ? " / " + item.context.offer.rentType : ""} · <a href={item.context.offer.url} target="_blank" rel="noreferrer">Voir l’annonce</a></Typography>}
         <Typography variant="body2">Instantané historique du reçu ; prix et disponibilité à confirmer.</Typography>
-        <Typography variant="body2">Responsable de test : {item.assignedTo || "Non pris en charge"}</Typography>
+        <Typography variant="body2" sx={{overflowWrap: "anywhere"}}>Responsable de test : {item.assignedTo || "Non pris en charge"}</Typography>
         <Typography variant="caption">Import : {new Date(item.createdAt).toLocaleString("fr-FR")} · Expiration : {new Date(item.expiresAt).toLocaleString("fr-FR")}</Typography>
         <Stack direction="row" gap={1}>
           {item.state === "new" && <Button disabled={busy} variant="outlined" onClick={() => act("/api/admin/whatsapp-requests/" + item.id, "PATCH", {action: "claim", expectedVersion: item.version})}>Prendre en charge ce test</Button>}
