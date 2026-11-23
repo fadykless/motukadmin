@@ -1,0 +1,75 @@
+name: WhatsApp Admin UI — isolated fictional emulators
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/*whatsapp*"
+      - "tests/whatsappUiSafety.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "firebase.c2.test.json"
+      - ".github/workflows/whatsapp-ui-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whatsapp-ui-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  whatsapp-ui:
+    name: WhatsApp browser acceptance — fictional emulators
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install locked application dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install isolated official Playwright runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/motuka-whatsapp-playwright" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          node "$RUNNER_TEMP/motuka-whatsapp-playwright/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Validate syntax and fail-closed guards
+        run: |
+          node --check scripts/run-whatsapp-ui.mjs
+          npm run test:whatsapp-ui:safety
+          npm run lint:whatsapp-ui
+      - name: Run real Admin browser recipe — desktop and mobile
+        timeout-minutes: 8
+        env:
+          NODE_ENV: test
+          WHATSAPP_UI_TEST_CONFIRMED: "yes"
+          WHATSAPP_ADMIN_DRY_RUN_ENABLED: "true"
+          NEXT_PUBLIC_C2_EMULATOR_MODE: "true"
+          GCLOUD_PROJECT: demo-motuka-c2
+          GOOGLE_CLOUD_PROJECT: demo-motuka-c2
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          WHATSAPP_UI_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          export PLAYWRIGHT_RUNTIME_DIR="$RUNNER_TEMP/motuka-whatsapp-playwright/node_modules"
+          npx --yes firebase-tools@14.27.0 emulators:exec --config firebase.c2.test.json --only auth,firestore --project demo-motuka-c2 'npm run test:whatsapp-ui'
+      - name: Publish fictional screenshots and safe result summary only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatsapp-ui-browser-evidence
+          path: |
+            artifacts/whatsapp-ui/*.png
+            artifacts/whatsapp-ui/summary.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -19,7 +19,10 @@
     "lint:whatsapp-rules": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-rules-guard.mjs tests/whatsapp-rules/tests/whatsappRulesSafety.test.mjs tests/whatsapp-rules/tests/whatsappClientRules.test.mjs",
     "test:whatsapp-full-app:safety": "node --test tests/whatsappFullAppSafety.test.mjs",
     "test:whatsapp-full-app:http": "node scripts/test-whatsapp-full-app-http.mjs",
-    "lint:whatsapp-full-app": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-full-app-guard.mjs scripts/test-whatsapp-full-app-http.mjs tests/whatsappFullAppSafety.test.mjs"
+    "lint:whatsapp-full-app": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-full-app-guard.mjs scripts/test-whatsapp-full-app-http.mjs tests/whatsappFullAppSafety.test.mjs",
+    "test:whatsapp-ui:safety": "node --test tests/whatsappUiSafety.test.mjs",
+    "test:whatsapp-ui": "node scripts/run-whatsapp-ui.mjs",
+    "lint:whatsapp-ui": "eslint --no-config-lookup --config scripts/whatsapp-queue-eslint.config.mjs scripts/whatsapp-ui-guard.mjs scripts/run-whatsapp-ui.mjs tests/whatsappUiSafety.test.mjs"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^41.4.2",
