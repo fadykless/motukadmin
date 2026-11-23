@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if false;
+      allow update: if request.auth != null
+                    && resource.data.user == request.auth.uid
+                    && request.resource.data.user == resource.data.user
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                      .hasAny(['status', 'expiresAt', 'createdAt', 'soldAt', 'user', 'alsoForRent']);
+      allow delete: if false;
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if request.auth != null
+                  && resource.data.user == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // Fields used by registration, Apple/Google sign-in and profile settings.
+      // Authorization / pricing flags (including isPartner) are server-managed.
+      function editableProfileKeys() {
+        return [
+          'email', 'photoURL', 'displayName', 'phoneNumber',
+          'city', 'interests', 'profileCompleted'
+        ];
+      }
+
+      function emailMatchesAuth() {
+        return !('email' in request.resource.data)
+          || request.resource.data.email == request.auth.token.email;
+      }
+
+      allow read: if isOwner();
+
+      allow create: if isOwner()
+        && request.resource.data.keys().hasOnly(editableProfileKeys())
+        && emailMatchesAuth();
+
+      allow update: if isOwner()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(editableProfileKeys())
+        && emailMatchesAuth();
+
+      allow delete: if false;
+    }
+
+    // C1 applications are accessed only via authenticated server API.
+    // Firestore Admin SDK bypasses these client security rules.
+    match /partnerApplications/{uid} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
